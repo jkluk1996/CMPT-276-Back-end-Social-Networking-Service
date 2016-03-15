@@ -254,8 +254,159 @@ SUITE(GET) {
     CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, row));
   }
 
+  /********Starting Tests for required operation 1 ********/
+  /*  
+    A simple test of GET by partition
+   */
+  TEST_FIXTURE(GetFixture, GetByPartition) {
+    pair<status_code,value> result {
+      do_request (methods::GET,
+      string(GetFixture::addr)
+      + GetFixture::table + "/"
+      + GetFixture::partition + "/"
+      + "*")};
+
+    CHECK(result.second.is_array());
+    CHECK_EQUAL(1,result.second.as_array().size());
+    CHECK_EQUAL(status_codes::OK, result.first);
+  }
+
   /*
-  	A simple test of GET by properties
+    Another simple test of GET by partition
+   */
+  TEST_FIXTURE(GetFixture, GetByPartition2) {
+    string partition {"Bennett,Chancelor"};
+    string row {"USA"};
+    string property {"Home"};
+    string prop_val {"Chicago"};
+    int put_result {put_entity (GetFixture::addr, GetFixture::table, partition, row, property, prop_val)};
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+
+    partition = "Katherines,The";
+    row = "Canada";
+    property = "Home";
+    prop_val = "Vancouver";
+    put_result = put_entity (GetFixture::addr, GetFixture::table, partition, row, property, prop_val);
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+
+    put_result = put_entity (GetFixture::addr, GetFixture::table, partition, "different_row", "property", "value");
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+
+    pair<status_code,value> result {
+      do_request (methods::GET,
+      string(GetFixture::addr)
+      + GetFixture::table + "/"
+      + partition + "/"
+      + "*")};
+
+    CHECK(result.second.is_array());
+    CHECK_EQUAL(2,result.second.as_array().size());
+    CHECK_EQUAL(status_codes::OK, result.first);
+    CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, row));
+    CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, "different_row"));
+    CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, "Bennett,Chancelor", "USA"));
+  }
+
+  /*
+    A test of GET by partition when table name is missing 
+   */
+  TEST_FIXTURE(GetFixture, GetByPartition_MissingTableName) {  
+    pair<status_code,value> result {
+        do_request (methods::GET,
+        string(GetFixture::addr)
+        + GetFixture::partition + "/"
+        + "*")};
+
+      CHECK_EQUAL(status_codes::BadRequest, result.first);
+  }
+
+  /*
+  A test of GET by partition when partition name is missing
+   */
+
+TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
+    pair<status_code,value> result {
+        do_request (methods::GET,
+        string(GetFixture::addr)
+        + GetFixture::table + "/"
+        + "*")};
+        
+      CHECK_EQUAL(status_codes::BadRequest, result.first);
+  }
+
+  /* 
+    A test of GET by partition when "*" is missing
+   */
+  TEST_FIXTURE(GetFixture, GetByPartition_MissingRow) {
+    pair<status_code,value> result {
+        do_request (methods::GET,
+        string(GetFixture::addr)
+      + GetFixture::table + "/"
+        + GetFixture::partition)};
+
+      CHECK_EQUAL(status_codes::BadRequest, result.first);
+  }
+
+  /*
+    A test of GET by partition, Table does not exist 
+   */
+  TEST_FIXTURE(GetFixture, GetByPartition_NonExistingTable) {      
+    string partition {"Katherines,The"};
+    string row {"Canada"};
+    string property {"Home"};
+    string prop_val {"Vancouver"};
+    int put_result {put_entity (GetFixture::addr, GetFixture::table, partition, row, property, prop_val)};
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+    
+    pair<status_code,value> result {
+      do_request (methods::GET,
+        string(GetFixture::addr)
+        + "Table_Doesnt_Exist", 
+        value::object (vector<pair<string,value>>
+        {make_pair("Property", value::string("*"))}))};
+    
+    CHECK_EQUAL(status_codes::NotFound, result.first);
+    CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, row));
+  }
+
+  /*
+    A test of GET by partition, no entities with specified partition
+   */
+  TEST_FIXTURE(GetFixture, GetByPartition_NonExistingPartition) {      
+    string partition {"Katherines,The"};
+    string row {"Canada"};
+    string property {"Home"};
+    string prop_val {"Vancouver"};
+    int put_result {put_entity (GetFixture::addr, GetFixture::table, partition, row, property, prop_val)};
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+
+    put_result = put_entity (GetFixture::addr, GetFixture::table, partition, "different_row", "property", "value");
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+    
+    pair<status_code,value> result {
+      do_request (methods::GET,
+      string(GetFixture::addr)
+      + GetFixture::table + "/"
+      + "Property_Doesnt_Exist" + "/"
+      + "*")};
+    
+    CHECK(result.second.is_array());
+    CHECK_EQUAL(0,result.second.as_array().size());
+    CHECK_EQUAL(status_codes::OK, result.first);
+    CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, row));
+    CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, "different_row"));
+  }
+
+
+  /********Starting Tests for required operation 2 ********/
+  /*
+    A simple test of GET by properties
    */
   TEST_FIXTURE(GetFixture, GetByProp) {
     string partition {"Katherines,The"};
@@ -285,7 +436,7 @@ SUITE(GET) {
   }
 
   /*
-  	Another simple test of GET by properties
+    Another simple test of GET by properties
    */
   TEST_FIXTURE(GetFixture, GetByProp2) {
     string partition {"Bennett,Chancelor"};
@@ -318,17 +469,17 @@ SUITE(GET) {
       + string(GetFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("*")),
-    	  make_pair("Home", value::string("*"))}))};
+        make_pair("Home", value::string("*"))}))};
     
     CHECK(result.second.is_array());
     CHECK_EQUAL(2, result.second.as_array().size());
     CHECK_EQUAL(status_codes::OK, result.first);
     CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, row));
-  	CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, "Bennett,Chancelor", "USA"));
+    CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, "Bennett,Chancelor", "USA"));
   }
 
   /*
-  	A test of GET by properties when no entities contain the specified property
+    A test of GET by properties when no entities contain the specified property
    */
   TEST_FIXTURE(GetFixture, GetByProp_PropNotFound){
     string partition {"Katherines,The"};
@@ -357,7 +508,7 @@ SUITE(GET) {
   }
 
   /*
-  	A test of GET by properties when the request specifies a table that does not exist
+    A test of GET by properties when the request specifies a table that does not exist
    */
   TEST_FIXTURE(GetFixture, GetByProp_TableNotFound){
     string partition {"Katherines,The"};
@@ -377,11 +528,10 @@ SUITE(GET) {
 
     CHECK_EQUAL(status_codes::NotFound, result.first);
     CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, row));
-  
   }
 
   /*
-  	A test of GET by properties when multiple entities contain multiple specified properties
+    A test of GET by properties when multiple entities contain multiple specified properties
    */
   TEST_FIXTURE(GetFixture, GetByProp_SameProps) {
     string partition {"Katherines,The"};
@@ -406,7 +556,7 @@ SUITE(GET) {
       + string(GetFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("*")),
-    	 make_pair("Home", value::string("*"))}))};
+       make_pair("Home", value::string("*"))}))};
     
     CHECK(result.second.is_array());
     CHECK_EQUAL(2, result.second.as_array().size());
@@ -415,7 +565,7 @@ SUITE(GET) {
   }
 
   /*
-  	A test of GET by properties when request does not specify a table name
+    A test of GET by properties when request does not specify a table name
    */
   TEST_FIXTURE(GetFixture, GetByProp_NoTableName) {
     pair<status_code,value> result {
@@ -428,7 +578,7 @@ SUITE(GET) {
   }
 
   /*
-  	A test of GET by properties when request does not specify a JSON object where values are the string "*"
+    A test of GET by properties when request does not specify a JSON object where values are the string "*"
    */
   TEST_FIXTURE(GetFixture, GetByProp_BadJsonParam) {
     pair<status_code,value> result {
@@ -442,6 +592,9 @@ SUITE(GET) {
   }
 }
 
+/*
+  Test Suite for optional PUT operations
+ */
 SUITE(PUT) {
   class PutFixture {
   public:
@@ -470,29 +623,31 @@ SUITE(PUT) {
       if (del_ent_result != status_codes::OK) {
   throw std::exception();
       }
-
-      /*
-  In traditional unit testing, we might delete the table after every test.
-
-  However, in cloud NoSQL environments (Azure Tables, Amazon DynamoDB)
-  creating and deleting tables are rate-limited operations. So we
-  leave the table after each test but delete all its entities.
-       */
       cout << "Skipping table delete" << endl;
-      /*
-      int del_result {delete_table(addr, table)};
-      cerr << "delete result " << del_result << endl;
-      if (del_result != status_codes::OK) {
-  throw std::exception();
-      }
-      */
     }
   };
 
+  /********Starting Tests for optional operation 1 ********/
   /*
   	A test of PUT property into all entities
    */
   TEST_FIXTURE(PutFixture, PutAll) {
+    string partition {"Bennett,Chancelor"};
+    string row {"USA"};
+    string property {"Home"};
+    string prop_val {"Chicago"};
+    int put_result {put_entity (PutFixture::addr, PutFixture::table, partition, row, property, prop_val)};
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+
+    partition = "Katherines,The";
+    row = "Canada";
+    property = "Home";
+    prop_val = "Vancouver";
+    put_result = put_entity (PutFixture::addr, PutFixture::table, partition, row, property, prop_val);
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
@@ -502,8 +657,54 @@ SUITE(PUT) {
         {make_pair("Song", value::string("New_Song"))}))};
     
     CHECK_EQUAL(status_codes::OK, result.first);
+    CHECK_EQUAL(status_codes::OK, delete_entity (PutFixture::addr, PutFixture::table, partition, row));
+    CHECK_EQUAL(status_codes::OK, delete_entity (PutFixture::addr, PutFixture::table, "Bennett,Chancelor", "USA"));
   }
 
+  /*
+    A test  of PUT property into all entities, Table does not exist
+   */
+  TEST_FIXTURE(PutFixture, PutAll_NonExistingTable) {
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+      string(PutFixture::addr)
+      + "AddProperty/"
+      + "Table_Doesnt_Exist",
+      value::object (vector<pair<string,value>>
+        {make_pair("Song", value::string("New_Song"))}))};
+    
+    CHECK_EQUAL(status_codes::NotFound, result.first);
+  }
+
+  /*
+    A test of PUT property into all entities, missing Table name
+   */
+  TEST_FIXTURE(PutFixture, PutAll_NoTableName) {
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+      string(PutFixture::addr)
+      + "AddProperty/",
+      value::object (vector<pair<string,value>>
+        {make_pair("Song", value::string("New_Song"))}))};
+    
+    CHECK_EQUAL(status_codes::BadRequest, result.first);
+  }
+
+  /*
+    A test of PUT property into all entities, missing JSON body
+   */
+  TEST_FIXTURE(PutFixture, PutAll_NoJSON) {
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+      string(PutFixture::addr)
+      + "AddProperty/"
+      + string(PutFixture::table))};
+    
+    CHECK_EQUAL(status_codes::BadRequest, result.first);
+  }
+
+
+  /********Starting Tests for optional operation 2 ********/
   /*
   	A test of PUT, updates entities with specified property in request
    */
@@ -529,6 +730,49 @@ SUITE(PUT) {
         {make_pair("Song", value::string("New_Song"))}))};
     
     CHECK_EQUAL(status_codes::OK, result.first);
+    CHECK_EQUAL(status_codes::OK, delete_entity (PutFixture::addr, PutFixture::table, partition, row));
+  }
+
+  /*
+    A test of PUT update, Table does not exist
+   */
+  TEST_FIXTURE(PutFixture, PutUpdate_NonExistingTable) {
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+      string(PutFixture::addr)
+      + "UpdateProperty/"
+      + "Table_Doesnt_Exist",
+      value::object (vector<pair<string,value>>
+        {make_pair("Song", value::string("New_Song"))}))};
+    
+    CHECK_EQUAL(status_codes::NotFound, result.first);
+  }
+
+  /*
+    A test of PUT update, missing Table name
+   */
+  TEST_FIXTURE(PutFixture, PutUpdate_NoTableName) {
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+      string(PutFixture::addr)
+      + "UpdateProperty/",
+      value::object (vector<pair<string,value>>
+        {make_pair("Song", value::string("New_Song"))}))};
+    
+    CHECK_EQUAL(status_codes::BadRequest, result.first);
+  }
+
+  /*
+    A test of PUT update, missing JSON body
+   */
+  TEST_FIXTURE(PutFixture, PutUpdate_NoJSON) {
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+      string(PutFixture::addr)
+      + "UpdateProperty/"
+      + string(PutFixture::table))};
+    
+    CHECK_EQUAL(status_codes::BadRequest, result.first);
   }
 }
 
