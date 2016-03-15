@@ -189,12 +189,17 @@ void handle_get(http_request message) {
     return;
   }
 
+  // Missing or too many operatoins
+  if (paths.size() == 2 || paths.size() >= 4) {
+    message.reply(status_codes::BadRequest);
+    return;
+  }
+
   cloud_table table {table_cache.lookup_table(paths[0])};
   if ( ! table.exists()) {
     message.reply(status_codes::NotFound);
     return;
   }
-
   
   if (paths.size() == 1) {
     table_query query {};
@@ -229,6 +234,27 @@ void handle_get(http_request message) {
       ++it;
     }
     message.reply(status_codes::OK, value::array(key_vec));
+    return;
+  }
+
+  // Get entries by partitions
+  if (paths[2] == "*") {
+    table_query query {};
+    table_query_iterator end;
+    table_query_iterator it = table.execute_query(query);
+    vector<value> key_vec;
+    while (it != end) {
+      if (it->partition_key() == paths[1])
+      {
+      cout << "Key: " << it->partition_key() << " / " << it->row_key() << endl;
+      prop_vals_t keys {
+         make_pair("Row", value::string(it->row_key()))};
+      keys = get_properties(it->properties(), keys);
+      key_vec.push_back(value::object(keys));
+      }
+      ++it;
+    }
+    message.reply(status_codes::OK, value::array(key_vec)); 
     return;
   }
 
@@ -290,8 +316,8 @@ void handle_put(http_request message) {
   string path {uri::decode(message.relative_uri().path())};
   cout << endl << "**** PUT " << path << endl;
   auto paths = uri::split_path(path);
-  // Need at least an operation, table name, partition, and row
-  if (paths.size() < 1) {
+  // Need at least an operation, and table name
+  if (paths.size() < 2) {
     message.reply(status_codes::BadRequest);
     return;
   }
@@ -335,6 +361,10 @@ void handle_put(http_request message) {
       }
       message.reply(status_codes::OK);
     }
+    
+    else {
+      message.reply(status_codes::BadRequest);
+    }
   }
 
   // Update property
@@ -356,6 +386,10 @@ void handle_put(http_request message) {
         ++it;
       }
       message.reply(status_codes::OK);
+    }
+
+    else {
+      message.reply(status_codes::BadRequest);
     }
   }
 
