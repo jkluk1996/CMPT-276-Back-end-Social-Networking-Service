@@ -347,16 +347,19 @@ void handle_put(http_request message) {
   else if (paths[0] == add_property) {
     const auto v = get_json_body(message);
 
-    if (v.size() == 1) {
+    if (v.size() == 1) {  
       table_query query {};
       table_query_iterator end;
       table_query_iterator it = table.execute_query(query);
 
       while(it != end) {
-        table_entity::properties_type properties = it->properties();
-        properties[v.begin()->first] = v.begin()->second;
-        cout << "Update " << it->partition_key() << "/" << it->row_key() << endl;
-        cout << "Added Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;;
+        table_entity entity {it->partition_key(), it->row_key()};
+        table_entity::properties_type& properties = entity.properties();
+        properties[v.begin()->first] = entity_property{v.begin()->second};
+        table_operation operation {table_operation::insert_or_merge_entity(entity)};
+        table_result op_result {table.execute(operation)};
+        cout << "Update " << entity.partition_key() << "/" << entity.row_key() << endl;
+        cout << "Added Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;
         ++it;
       }
       message.reply(status_codes::OK);
@@ -377,9 +380,21 @@ void handle_put(http_request message) {
       table_query_iterator it = table.execute_query(query);
 
       while(it != end) {
-        table_entity::properties_type properties = it->properties();
-        if (properties.find(v.begin()->first) != properties.end()) {
-          properties[v.begin()->first] = v.begin()->second;
+        table_entity entity {it->partition_key(), it->row_key()};
+        table_entity::properties_type& properties = entity.properties();
+        table_entity::properties_type property_ptr = it->properties();
+
+        bool contains_property {true};
+        for (auto i = v.begin(); i != v.end(); ++i) {
+          if (property_ptr.find(i->first) == property_ptr.end()) {
+            contains_property = false;
+          }
+        }
+
+        if (contains_property == true) {
+          properties[v.begin()->first] = entity_property{v.begin()->second};
+          table_operation operation {table_operation::insert_or_merge_entity(entity)};
+          table_result op_result {table.execute(operation)};
           cout << "Update " << it->partition_key() << "/" << it->row_key() << endl;
           cout << "Updated Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;;
         }
