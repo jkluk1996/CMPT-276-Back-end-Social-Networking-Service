@@ -343,7 +343,8 @@ pair<status_code,string> get_update_token(const string& addr,  const string& use
   but the table is left. See the comments in the code
   for the reason for this design.
  */
-class BasicFixture {
+//ADDED changed GetFixture to Get Fixture
+class GetFixture {
 public:
   static constexpr const char* addr {"http://localhost:34568/"};
   static constexpr const char* table {"TestTable"};
@@ -353,7 +354,7 @@ public:
   static constexpr const char* prop_val {"RESPECT"};
 
 public:
-  BasicFixture() {
+  GetFixture() {
     int make_result {create_table(addr, table)};
     cerr << "create result " << make_result << endl;
     if (make_result != status_codes::Created && make_result != status_codes::Accepted) {
@@ -366,7 +367,7 @@ public:
     }
   }
 
-  ~BasicFixture() {
+  ~GetFixture() {
     int del_ent_result {delete_entity (addr, table, partition, row)};
     if (del_ent_result != status_codes::OK) {
       throw std::exception();
@@ -396,20 +397,20 @@ SUITE(GET) {
 
     Demonstrates use of new compare_json_arrays() function.
    */
-  TEST_FIXTURE(BasicFixture, GetAll) {
+  TEST_FIXTURE(GetFixture, GetAll) {
     string partition {"Canada"};
     string row {"Katherines,The"};
     string property {"Home"};
     string prop_val {"Vancouver"};
-    int put_result {put_entity (BasicFixture::addr, BasicFixture::table, partition, row, property, prop_val)};
+    int put_result {put_entity (GetFixture::addr, GetFixture::table, partition, row, property, prop_val)};
     cerr << "put result " << put_result << endl;
     assert (put_result == status_codes::OK);
 
     pair<status_code,value> result {
       do_request (methods::GET,
-                  string(BasicFixture::addr)
+                  string(GetFixture::addr)
                   + read_entity_admin + "/"
-                  + string(BasicFixture::table))};
+                  + string(GetFixture::table))};
     CHECK_EQUAL(status_codes::OK, result.first);
     value obj1 {
       value::object(vector<pair<string,value>> {
@@ -420,9 +421,9 @@ SUITE(GET) {
     };
     value obj2 {
       value::object(vector<pair<string,value>> {
-          make_pair(string("Partition"), value::string(BasicFixture::partition)),
-          make_pair(string("Row"), value::string(BasicFixture::row)),
-          make_pair(string(BasicFixture::property), value::string(BasicFixture::prop_val))
+          make_pair(string("Partition"), value::string(GetFixture::partition)),
+          make_pair(string("Row"), value::string(GetFixture::row)),
+          make_pair(string(GetFixture::property), value::string(GetFixture::prop_val))
       })
     };
     vector<object> exp {
@@ -430,7 +431,7 @@ SUITE(GET) {
       obj2.as_object()
     };
     compare_json_arrays(exp, result.second);
-    CHECK_EQUAL(status_codes::OK, delete_entity (BasicFixture::addr, BasicFixture::table, partition, row));
+    CHECK_EQUAL(status_codes::OK, delete_entity (GetFixture::addr, GetFixture::table, partition, row));
   }
 
   /********Starting Tests for required operation 1 ********/

@@ -22,6 +22,7 @@
 
 #include "TableCache.h"
 #include "make_unique.h"
+#include "ServerUtils.h"
 
 #include "azure_keys.h"
 
@@ -65,17 +66,18 @@ using prop_vals_t = vector<pair<string,value>>;
 
 constexpr const char* def_url = "http://localhost:34568";
 
-const string create_table {"CreateTable"};
-const string delete_table {"DeleteTable"};
-const string update_entity {"UpdateEntity"};
-const string delete_entity {"DeleteEntity"};
-const string add_property {"AddProperty"};
-const string update_property {"UpdateProperty"};
+//ADDED changed to contain Admin
+const string create_table {"CreateTableAdmin"};
+const string delete_table {"DeleteTableAdmin"};
+const string update_entity {"UpdateEntityAdmin"};
+const string delete_entity {"DeleteEntityAdmin"};
+const string add_property {"AddPropertyAdmin"};
+const string update_property {"UpdatePropertyAdmin"};
 
 /*
   Cache of opened tables
  */
-TableCache table_cache {storage_connection_string};
+TableCache table_cache {};
 
 /*
   Convert properties represented in Azure Storage type
@@ -293,18 +295,25 @@ void handle_post(http_request message) {
   string table_name {paths[1]};
   cloud_table table {table_cache.lookup_table(table_name)};
 
-  // Create table (idempotent if table exists)
-  if (paths[0] == create_table) {
-    cout << "Create " << table_name << endl;
-    bool created {table.create_if_not_exists()};
-    cout << "Administrative table URI " << table.uri().primary_uri().to_string() << endl;
-    if (created)
-      message.reply(status_codes::Created);
-    else
-      message.reply(status_codes::Accepted);
+  try{
+    // Create table (idempotent if table exists)
+    if (paths[0] == create_table) {
+      cout << "Create " << table_name << endl;
+      bool created {table.create_if_not_exists()};
+      cout << "Administrative table URI " << table.uri().primary_uri().to_string() << endl;
+      if (created)
+        message.reply(status_codes::Created);
+      else
+        message.reply(status_codes::Accepted);
+    }
+    else {
+      message.reply(status_codes::BadRequest);
+    }
   }
-  else {
-    message.reply(status_codes::BadRequest);
+  catch (const storage_exception& e)
+  {
+    cout << "Azure Table Storage error: " << e.what() << endl;
+    message.reply(status_codes::InternalError);
   }
 }
 
@@ -327,79 +336,85 @@ void handle_put(http_request message) {
     return;
   }
 
-  // Update entity
-  if (paths[0] == update_entity) {
-  	table_entity entity {paths[2], paths[3]};
-    cout << "Update " << entity.partition_key() << " / " << entity.row_key() << endl;
-    table_entity::properties_type& properties = entity.properties();
-    for (const auto v : get_json_body(message)) {
-      properties[v.first] = entity_property {v.second};
-    }
-
-    table_operation operation {table_operation::insert_or_merge_entity(entity)};
-    table_result op_result {table.execute(operation)};
-
-    message.reply(status_codes::OK);
-  }
-
-  // Add property
-  else if (paths[0] == add_property) {
-    const auto v = get_json_body(message);
-
-    if (v.size() == 1) {  
-      table_query query {};
-      table_query_iterator end;
-      table_query_iterator it = table.execute_query(query);
-
-      while(it != end) {
-        table_entity entity {it->partition_key(), it->row_key()};
-        table_entity::properties_type& properties = entity.properties();
-        properties[v.begin()->first] = entity_property{v.begin()->second};
-        table_operation operation {table_operation::insert_or_merge_entity(entity)};
-        table_result op_result {table.execute(operation)};
-        cout << "Update " << entity.partition_key() << "/" << entity.row_key() << endl;
-        cout << "Added Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;
-        ++it;
+  try{
+    // Update entity
+    if (paths[0] == update_entity) {
+    	table_entity entity {paths[2], paths[3]};
+      cout << "Update " << entity.partition_key() << " / " << entity.row_key() << endl;
+      table_entity::properties_type& properties = entity.properties();
+      for (const auto v : get_json_body(message)) {
+        properties[v.first] = entity_property {v.second};
       }
+
+      table_operation operation {table_operation::insert_or_merge_entity(entity)};
+      table_result op_result {table.execute(operation)};
+
       message.reply(status_codes::OK);
     }
-    
-    else {
-      message.reply(status_codes::BadRequest);
-    }
-  }
 
-  // Update property
-  else if (paths[0] == update_property) {
-    const auto v = get_json_body(message);
+    // Add property
+    else if (paths[0] == add_property) {
+      const auto v = get_json_body(message);
 
-    if (v.size() == 1) {
-      table_query query {};
-      table_query_iterator end;
-      table_query_iterator it = table.execute_query(query);
+      if (v.size() == 1) {  
+        table_query query {};
+        table_query_iterator end;
+        table_query_iterator it = table.execute_query(query);
 
-      while(it != end) {
-        table_entity entity {it->partition_key(), it->row_key()};
-        table_entity::properties_type& properties = entity.properties();
-        table_entity::properties_type property_ptr = it->properties();
-
-        bool contains_property {true};
-        for (auto i = v.begin(); i != v.end(); ++i) {
-          if (property_ptr.find(i->first) == property_ptr.end()) {
-            contains_property = false;
-          }
-        }
-
-        if (contains_property == true) {
+        while(it != end) {
+          table_entity entity {it->partition_key(), it->row_key()};
+          table_entity::properties_type& properties = entity.properties();
           properties[v.begin()->first] = entity_property{v.begin()->second};
           table_operation operation {table_operation::insert_or_merge_entity(entity)};
           table_result op_result {table.execute(operation)};
-          cout << "Update " << it->partition_key() << "/" << it->row_key() << endl;
-          cout << "Updated Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;;
+          cout << "Update " << entity.partition_key() << "/" << entity.row_key() << endl;
+          cout << "Added Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;
+          ++it;
         }
-        ++it;
+        message.reply(status_codes::OK);
       }
-      message.reply(status_codes::OK);
+      
+      else {
+        message.reply(status_codes::BadRequest);
+      }
+    }
+
+    // Update property
+    else if (paths[0] == update_property) {
+      const auto v = get_json_body(message);
+
+      if (v.size() == 1) {
+        table_query query {};
+        table_query_iterator end;
+        table_query_iterator it = table.execute_query(query);
+
+        while(it != end) {
+          table_entity entity {it->partition_key(), it->row_key()};
+          table_entity::properties_type& properties = entity.properties();
+          table_entity::properties_type property_ptr = it->properties();
+
+          bool contains_property {true};
+          for (auto i = v.begin(); i != v.end(); ++i) {
+            if (property_ptr.find(i->first) == property_ptr.end()) {
+              contains_property = false;
+            }
+          }
+
+          if (contains_property == true) {
+            properties[v.begin()->first] = entity_property{v.begin()->second};
+            table_operation operation {table_operation::insert_or_merge_entity(entity)};
+            table_result op_result {table.execute(operation)};
+            cout << "Update " << it->partition_key() << "/" << it->row_key() << endl;
+            cout << "Updated Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;;
+          }
+          ++it;
+        }
+        message.reply(status_codes::OK);
+      }
+
+      else {
+        message.reply(status_codes::BadRequest);
+      }
     }
 
     else {
@@ -407,8 +422,10 @@ void handle_put(http_request message) {
     }
   }
 
-  else {
-    message.reply(status_codes::BadRequest);
+  catch (const storage_exception& e)
+  {
+    cout << "Azure Table Storage error: " << e.what() << endl;
+    message.reply(status_codes::InternalError);
   }
 }
 
@@ -472,6 +489,10 @@ void handle_delete(http_request message) {
   Wait for a carriage return, then shut the server down.
  */
 int main (int argc, char const * argv[]) {
+  cout << "Parsing connection string" << endl;
+  table_cache.init (storage_connection_string);
+
+  cout << "Opening listener" << endl;
   http_listener listener {def_url};
   listener.support(methods::GET, &handle_get);
   listener.support(methods::POST, &handle_post);
