@@ -845,7 +845,7 @@ SUITE(PUT) {
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
-      + "AddProperty/"
+      + add_property_admin + "/"
       + string(PutFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("New_Song"))}))};
@@ -862,7 +862,7 @@ SUITE(PUT) {
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
-      + "AddProperty/"
+      + add_property_admin + "/"
       + "Table_Doesnt_Exist",
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("New_Song"))}))};
@@ -877,7 +877,7 @@ SUITE(PUT) {
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
-      + "AddProperty/",
+      + add_property_admin + "/",
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("New_Song"))}))};
     
@@ -891,7 +891,7 @@ SUITE(PUT) {
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
-      + "AddProperty/"
+      + add_property_admin + "/"
       + string(PutFixture::table))};
     
     CHECK_EQUAL(status_codes::BadRequest, result.first);
@@ -918,7 +918,7 @@ SUITE(PUT) {
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
-      + "UpdateProperty/"
+      + update_property_admin + "/"
       + string(PutFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("New_Song"))}))};
@@ -934,7 +934,7 @@ SUITE(PUT) {
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
-      + "UpdateProperty/"
+      + update_property_admin + "/"
       + "Table_Doesnt_Exist",
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("New_Song"))}))};
@@ -949,7 +949,7 @@ SUITE(PUT) {
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
-      + "UpdateProperty/",
+      + update_property_admin + "/",
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("New_Song"))}))};
     
@@ -963,7 +963,7 @@ SUITE(PUT) {
     pair<status_code,value> result {
       do_request (methods::PUT,
       string(PutFixture::addr)
-      + "UpdateProperty/"
+      + update_property_admin + "/"
       + string(PutFixture::table))};
     
     CHECK_EQUAL(status_codes::BadRequest, result.first);
