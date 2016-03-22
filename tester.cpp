@@ -442,6 +442,7 @@ SUITE(GET) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + GetFixture::table + "/"
       + GetFixture::partition + "/"
       + "*")};
@@ -478,6 +479,7 @@ SUITE(GET) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + GetFixture::table + "/"
       + partition + "/"
       + "*")};
@@ -497,6 +499,7 @@ SUITE(GET) {
     pair<status_code,value> result {
         do_request (methods::GET,
         string(GetFixture::addr)
+        + read_entity_admin + "/"
         + GetFixture::partition + "/"
         + "*")};
 
@@ -511,6 +514,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
         do_request (methods::GET,
         string(GetFixture::addr)
+        + read_entity_admin + "/"
         + GetFixture::table + "/"
         + "*")};
         
@@ -524,7 +528,8 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
         do_request (methods::GET,
         string(GetFixture::addr)
-      + GetFixture::table + "/"
+        + read_entity_admin + "/"
+        + GetFixture::table + "/"
         + GetFixture::partition)};
 
       CHECK_EQUAL(status_codes::BadRequest, result.first);
@@ -545,6 +550,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
       do_request (methods::GET,
         string(GetFixture::addr)
+        + read_entity_admin + "/"
         + "Table_Doesnt_Exist", 
         value::object (vector<pair<string,value>>
         {make_pair("Property", value::string("*"))}))};
@@ -572,6 +578,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + GetFixture::table + "/"
       + "Property_Doesnt_Exist" + "/"
       + "*")};
@@ -604,6 +611,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + string(GetFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair(property, value::string("*")),
@@ -646,6 +654,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + string(GetFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("*")),
@@ -677,6 +686,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + string(GetFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair("Non_existing_property", value::string("*"))}))};
@@ -702,6 +712,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + "Non-existing-Table",
       value::object (vector<pair<string,value>>
         {make_pair("Random_property", value::string("*"))}))};
@@ -733,6 +744,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + string(GetFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair("Song", value::string("*")),
@@ -750,7 +762,8 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
   TEST_FIXTURE(GetFixture, GetByProp_NoTableName) {
     pair<status_code,value> result {
       do_request (methods::GET,
-      string(GetFixture::addr),
+      string(GetFixture::addr)
+      + read_entity_admin + "/",
       value::object (vector<pair<string,value>>
         {}))};
     
@@ -764,6 +777,7 @@ TEST_FIXTURE(GetFixture, GetByPartition_MissingPartition) {
     pair<status_code,value> result {
       do_request (methods::GET,
       string(GetFixture::addr)
+      + read_entity_admin + "/"
       + string(GetFixture::table),
       value::object (vector<pair<string,value>>
         {make_pair("Property", value::string("Bad String"))}))};
