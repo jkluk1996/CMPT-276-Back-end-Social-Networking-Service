@@ -52,6 +52,7 @@ using web::http::experimental::listener::http_listener;
 
 using prop_str_vals_t = vector<pair<string,string>>;
 
+
 constexpr const char* def_url = "http://localhost:34570";
 
 const string auth_table_name {"AuthTable"};
@@ -181,7 +182,58 @@ void handle_get(http_request message) {
     message.reply(status_codes::BadRequest);
     return;
   }
-  message.reply(status_codes::NotImplemented);
+
+  cloud_table table {table_cache.lookup_table(auth_table_name)};
+  if ( ! table.exists()) {
+    message.reply(status_codes::NotFound);
+    return;
+  }
+
+  cloud_table data_table {table_cache.lookup_table(data_table_name)};
+  if ( ! table.exists()) {
+    message.reply(status_codes::NotFound);
+    return;
+  }
+
+  string userid = paths[1];
+  table_operation retrieve_operation {table_operation::retrieve_entity(auth_table_userid_partition, userid)};
+  table_result retrieve_result {table.execute(retrieve_operation)};
+  cout << "HTTP code: " << retrieve_result.http_status_code() << endl;
+  if (retrieve_result.http_status_code() == status_codes::NotFound) {
+    message.reply(status_codes::NotFound);
+    return;
+  }
+
+  table_entity entity {retrieve_result.entity()};
+  table_entity::properties_type properties {entity.properties()};
+  unordered_map<string,string> message_properties = get_json_body(message);
+
+  if (message_properties.size() == 1 
+    && message_properties.begin()->first == auth_table_password_prop
+    && !(message_properties.begin()->second.empty())) {
+
+    if(paths[0] == get_update_token_op) {
+      if (message_properties.begin()->second == properties[auth_table_password_prop].string_value()) {
+        pair<status_code,string> token = do_get_token(data_table, 
+        properties[auth_table_partition_prop].string_value(), 
+        properties[auth_table_row_prop].string_value(), 
+        table_shared_access_policy::permissions::read | 
+        table_shared_access_policy::permissions::update);
+
+        vector<pair<string,value>> json_token {make_pair("token", value::string(token.second))};
+        message.reply(token.first, value::object(json_token));
+      }
+
+      else {
+        message.reply(status_codes::NotFound);
+        return;
+      }
+    }
+  }
+  else {
+    message.reply(status_codes::BadRequest);
+    return;
+  }
 }
 
 /*

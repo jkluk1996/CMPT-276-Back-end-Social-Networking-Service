@@ -292,7 +292,7 @@ int put_entity(const string& addr, const string& table, const string& partition,
               const vector<pair<string,value>>& props) {
   pair<status_code,value> result {
     do_request (methods::PUT,
-               addr + "UpdateEntity/" + table + "/" + partition + "/" + row,
+               addr + update_property_admin  + "/" + table + "/" + partition + "/" + row,
                value::object (props))};
   return result.first;
 }
@@ -343,7 +343,7 @@ pair<status_code,string> get_update_token(const string& addr,  const string& use
   but the table is left. See the comments in the code
   for the reason for this design.
  */
-//ADDED changed GetFixture to Get Fixture
+//ADDED changed BasicFixture to GetFixture
 class GetFixture {
 public:
   static constexpr const char* addr {"http://localhost:34568/"};
@@ -970,15 +970,6 @@ SUITE(PUT) {
   }
 }
 
-//COMMENTING OUT
-/*
-  Locate and run all tests
- 
-int main(int argc, const char* argv[]) {
-  return UnitTest::RunAllTests();
-}
-*/
-
 class AuthFixture {
 public:
   static constexpr const char* addr {"http://localhost:34568/"};
@@ -1006,6 +997,8 @@ public:
     if (put_result != status_codes::OK) {
       throw std::exception();
     }
+
+    //Added NOTE created auth_table using curl
     // Ensure userid and password in system
     int user_result {put_entity (addr,
                                  auth_table,
@@ -1014,8 +1007,33 @@ public:
                                  auth_pwd_prop,
                                  user_pwd)};
     cerr << "user auth table insertion result " << user_result << endl;
-    if (user_result != status_codes::OK)
+    if (user_result != status_codes::OK) {
       throw std::exception();
+    }
+
+    //Added partition that user can modify
+    user_result = put_entity (addr,
+                             auth_table,
+                             auth_table_partition,
+                             userid,
+                             "DataPartition",
+                             AuthFixture::partition);
+    cerr << "user auth table insertion result " << user_result << endl;
+    if (user_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    //Added row that user can modify
+    user_result = put_entity (addr,
+                             auth_table,
+                             auth_table_partition,
+                             userid,
+                             "DataRow",
+                             AuthFixture::row);
+    cerr << "user auth table insertion result " << user_result << endl;
+    if (user_result != status_codes::OK) {
+      throw std::exception();
+    }
   }
 
   ~AuthFixture() {
@@ -1023,6 +1041,12 @@ public:
     if (del_ent_result != status_codes::OK) {
       throw std::exception();
     }
+
+    del_ent_result = delete_entity (addr, auth_table, auth_table_partition, userid);
+    if (del_ent_result != status_codes::OK) {
+      throw std::exception();
+    }
+
   }
 };
 
