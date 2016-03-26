@@ -288,6 +288,10 @@ void handle_get(http_request message) {
     else
       message.reply(status_codes::OK);
   }
+
+  else {
+    message.reply(status_codes::BadRequest);
+  }
 }
 
 /*
@@ -422,8 +426,12 @@ void handle_put(http_request message) {
     //Added
     // Update entity with authorization
     else if (paths[0] == update_entity_auth) {
+      if (paths.size() < 4)
+      {
+        message.reply(status_codes::BadRequest);
+        return;
+      }
       unordered_map<string, string> message_properties = get_json_body(message);
-      //status_code auth_update_status = update_with_token(message, tables_endpoint, message_properties);
       message.reply(update_with_token(message, tables_endpoint, message_properties));
     }
 
