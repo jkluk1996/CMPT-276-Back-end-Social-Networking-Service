@@ -288,6 +288,12 @@ void handle_get(http_request message) {
     else
       message.reply(status_codes::OK);
   }
+
+  //Added
+  // Read entity with authorization
+  else if (paths[0] == read_entity_auth) { 
+    message.reply((read_with_token(message, tables_endpoint)).first);
+  }
 }
 
 /*
