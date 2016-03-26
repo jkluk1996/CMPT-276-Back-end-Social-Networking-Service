@@ -289,11 +289,25 @@ void handle_get(http_request message) {
       message.reply(status_codes::OK);
   }
 
-  //Added
-  // Read entity with authorization
+  // Added
+  // Read entity with authorization, return them as JSON
   else if (paths[0] == read_entity_auth) { 
-    message.reply((read_with_token(message, tables_endpoint)).first);
+    if( !((read_with_token(message, tables_endpoint)).first == status_codes::OK) ) {
+      message.reply((read_with_token(message, tables_endpoint)).first);
+      return;
+    }
+    else{
+      table_entity entity = (read_with_token(message, tables_endpoint)).second;
+      table_entity::properties_type properties {entity.properties()};
+
+      prop_vals_t values (get_properties(properties));
+      if (values.size() > 0)
+        message.reply(status_codes::OK, value::object(values));
+      else
+        message.reply(status_codes::OK);
   }
+  }
+
 }
 
 /*
