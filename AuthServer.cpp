@@ -233,7 +233,7 @@ void handle_get(http_request message) {
 
     // GetUpdateToken
 
-    if(paths[0] == get_update_token_op) {
+    else if(paths[0] == get_update_token_op) {
       if (message_properties.begin()->second == properties[auth_table_password_prop].string_value()) {
         pair<status_code,string> token = do_get_token(data_table, 
         properties[auth_table_partition_prop].string_value(), 

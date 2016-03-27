@@ -162,7 +162,7 @@ unordered_map<string,string> get_json_body(http_request message) {
 void get_by_properties (const table_query_iterator& it, const unordered_map<string,string>& map, vector<value>& key_vec){
   table_entity::properties_type properties = it->properties();
 
-  bool contains_property {true}; 
+  bool contains_property {true};
   for (auto i = map.begin(); i != map.end(); ++i) {
     if (properties.find(i->first) == properties.end()) {
       contains_property = false;
@@ -292,11 +292,11 @@ void handle_get(http_request message) {
   // Added
   // Read entity with authorization, return them as JSON
   else if (paths[0] == read_entity_auth) { 
-    if ( (read_with_token(message, tables_endpoint)).first != status_codes::OK ) {
+    if( !((read_with_token(message, tables_endpoint)).first == status_codes::OK) ) {
       message.reply((read_with_token(message, tables_endpoint)).first);
       return;
     }
-    else {
+    else{
       table_entity entity = (read_with_token(message, tables_endpoint)).second;
       table_entity::properties_type properties {entity.properties()};
 
@@ -305,7 +305,7 @@ void handle_get(http_request message) {
         message.reply(status_codes::OK, value::object(values));
       else
         message.reply(status_codes::OK);
-    }
+  }
   }
 
   else {
