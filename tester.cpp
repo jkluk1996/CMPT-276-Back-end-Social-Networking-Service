@@ -1035,6 +1035,7 @@ public:
       throw std::exception();
     }
 
+    /*
     //Added partition that user can modify
     user_result = put_entity (addr,
                              auth_table,
@@ -1057,7 +1058,7 @@ public:
     cerr << "user auth table insertion result " << user_result << endl;
     if (user_result != status_codes::OK) {
       throw std::exception();
-    }
+    }*/
   }
 
   ~AuthFixture() {
@@ -1066,10 +1067,10 @@ public:
       throw std::exception();
     }
 
-    del_ent_result = delete_entity (addr, auth_table, auth_table_partition, userid);
+    /*del_ent_result = delete_entity (addr, auth_table, auth_table_partition, userid);
     if (del_ent_result != status_codes::OK) {
       throw std::exception();
-    }
+    }*/
 
   }
 };
@@ -1119,4 +1120,145 @@ SUITE(UPDATE_AUTH) {
     cout << AuthFixture::property << endl;
     compare_json_values (expect, ret_res.second);
   }
+
+  //Testing user not found
+  TEST_FIXTURE(AuthFixture,  PutAuth_UserNotFound) {
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       "NonExistingUser",
+                       AuthFixture::user_pwd)};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::NotFound);
+  }
+
+  //Testing empty password
+  TEST_FIXTURE(AuthFixture,  PutAuth_EmptyPasword) {
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       AuthFixture::userid,
+                       "")};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::BadRequest);
+  }
+
+  //Testing less than four parameters 
+  TEST_FIXTURE(AuthFixture,  PutAuth_TooFewParam) {
+    pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
+
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       AuthFixture::userid,
+                       AuthFixture::user_pwd)};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::OK);
+    
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+                  string(AuthFixture::addr)
+                  + update_entity_auth + "/"
+                  + AuthFixture::table + "/"
+                  + token_res.second + "/"
+                  + AuthFixture::partition + "/",
+                  value::object (vector<pair<string,value>>
+                                   {make_pair(added_prop.first,
+                                              value::string(added_prop.second))})
+                  )};
+    CHECK_EQUAL(status_codes::BadRequest, result.first);
+  }
+
+  //Testing table not found
+  TEST_FIXTURE(AuthFixture,  PutAuth_TableNotFound) {
+    pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
+
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       AuthFixture::userid,
+                       AuthFixture::user_pwd)};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::OK);
+    
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+                  string(AuthFixture::addr)
+                  + update_entity_auth + "/"
+                  + "NonExistingTable"+ "/"
+                  + token_res.second + "/"
+                  + AuthFixture::partition + "/"
+                  + AuthFixture::row,
+                  value::object (vector<pair<string,value>>
+                                   {make_pair(added_prop.first,
+                                              value::string(added_prop.second))})
+                  )};
+    CHECK_EQUAL(status_codes::NotFound, result.first);
+  }
+
+  //Testing entity with partition not found
+  TEST_FIXTURE(AuthFixture,  PutAuth_PartitionNotFound) {
+    pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
+
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       AuthFixture::userid,
+                       AuthFixture::user_pwd)};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::OK);
+    
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+                  string(AuthFixture::addr)
+                  + update_entity_auth + "/"
+                  + AuthFixture::table + "/"
+                  + token_res.second + "/"
+                  + "NonExistingPartition" + "/"
+                  + AuthFixture::row,
+                  value::object (vector<pair<string,value>>
+                                   {make_pair(added_prop.first,
+                                              value::string(added_prop.second))})
+                  )};
+    CHECK_EQUAL(status_codes::NotFound, result.first);
+  }
+
+  //Testing entity with row not found
+  TEST_FIXTURE(AuthFixture,  PutAuth_RowNotFound) {
+    pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
+
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       AuthFixture::userid,
+                       AuthFixture::user_pwd)};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::OK);
+    
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+                  string(AuthFixture::addr)
+                  + update_entity_auth + "/"
+                  + AuthFixture::table + "/"
+                  + token_res.second + "/"
+                  + AuthFixture::partition + "/"
+                  + "NonExistingRow",
+                  value::object (vector<pair<string,value>>
+                                   {make_pair(added_prop.first,
+                                              value::string(added_prop.second))})
+                  )};
+    CHECK_EQUAL(status_codes::NotFound, result.first);
+  }
+
+  /*
+  //Testing non-existant user
+  TEST_FIXTURE(AuthFixture,  PutAuth_EmptyUser) {
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       "",
+                       AuthFixture::user_pwd)};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::NotFound);
+  }*/
 }

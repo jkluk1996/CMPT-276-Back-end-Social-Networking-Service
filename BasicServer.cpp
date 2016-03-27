@@ -445,11 +445,6 @@ void handle_put(http_request message) {
     //Added
     // Update entity with authorization
     else if (paths[0] == update_entity_auth) {
-      if (paths.size() < 4)
-      {
-        message.reply(status_codes::BadRequest);
-        return;
-      }
       unordered_map<string, string> message_properties = get_json_body(message);
       message.reply(update_with_token(message, tables_endpoint, message_properties));
     }
