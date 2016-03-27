@@ -225,7 +225,7 @@ void handle_get(http_request message) {
       }
 
       else {
-        message.reply(status_codes::NotFound);
+        message.reply(status_codes::BadRequest);
         return;
       }
     }

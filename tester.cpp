@@ -1022,8 +1022,13 @@ public:
       throw std::exception();
     }
 
-    //Added NOTE created auth_table using curl
-    // Ensure userid and password in system
+    /*NOTE
+      Assumes AuthTable previously created with curl
+      Assumes AuthTable entity added with adduser.sh
+      {"DataPartition":"USA","DataRow":"Franklin,Aretha","Partition":"Userid","Password":"user","Row":"user"}
+     */
+    
+    //Ensure userid and password in system
     int user_result {put_entity (addr,
                                  auth_table,
                                  auth_table_partition,
@@ -1034,31 +1039,6 @@ public:
     if (user_result != status_codes::OK) {
       throw std::exception();
     }
-
-    /*
-    //Added partition that user can modify
-    user_result = put_entity (addr,
-                             auth_table,
-                             auth_table_partition,
-                             userid,
-                             "DataPartition",
-                             AuthFixture::partition);
-    cerr << "user auth table insertion result " << user_result << endl;
-    if (user_result != status_codes::OK) {
-      throw std::exception();
-    }
-
-    //Added row that user can modify
-    user_result = put_entity (addr,
-                             auth_table,
-                             auth_table_partition,
-                             userid,
-                             "DataRow",
-                             AuthFixture::row);
-    cerr << "user auth table insertion result " << user_result << endl;
-    if (user_result != status_codes::OK) {
-      throw std::exception();
-    }*/
   }
 
   ~AuthFixture() {
@@ -1066,12 +1046,6 @@ public:
     if (del_ent_result != status_codes::OK) {
       throw std::exception();
     }
-
-    /*del_ent_result = delete_entity (addr, auth_table, auth_table_partition, userid);
-    if (del_ent_result != status_codes::OK) {
-      throw std::exception();
-    }*/
-
   }
 };
 
@@ -1139,6 +1113,37 @@ SUITE(UPDATE_AUTH) {
       get_update_token(AuthFixture::auth_addr,
                        AuthFixture::userid,
                        "")};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::BadRequest);
+  }
+
+  //Testing message body did not have a property named ‘Password’
+  TEST_FIXTURE(AuthFixture,  PutAuth_BadPropName) {
+    cout << "Requesting token" << endl;
+    string password = AuthFixture::user_pwd;
+    value pwd {build_json_object (vector<pair<string,string>> {make_pair("NotPassword", password)})};
+    pair<status_code,value> token_res {do_request (methods::GET,
+                                                   AuthFixture::auth_addr +
+                                                   get_update_token_op + "/" +
+                                                   AuthFixture::userid,
+                                                   pwd)};
+    cerr << "token " << token_res.second << endl;
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::BadRequest);
+  }
+
+  //Testing message body included one or more properties other than 'Password'
+  TEST_FIXTURE(AuthFixture,  PutAuth_TooMuchProps) {
+    cout << "Requesting token" << endl;
+    string password = AuthFixture::user_pwd;
+    value pwd {build_json_object (vector<pair<string,string>> {make_pair("Password", password),
+                                                               make_pair("NotPassword", "AnotherProperty")})};
+    pair<status_code,value> token_res {do_request (methods::GET,
+                                                   AuthFixture::auth_addr +
+                                                   get_update_token_op + "/" +
+                                                   AuthFixture::userid,
+                                                   pwd)};
+    cerr << "token " << token_res.second << endl;
     cout << "Token response " << token_res.first << endl;
     CHECK_EQUAL (token_res.first, status_codes::BadRequest);
   }
@@ -1249,6 +1254,43 @@ SUITE(UPDATE_AUTH) {
                   )};
     CHECK_EQUAL(status_codes::NotFound, result.first);
   }
+
+  //Testing when token did not authorize access to specified entity
+  TEST_FIXTURE(AuthFixture,  PutAuth_TokenWrongEntity) {
+    pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
+
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       AuthFixture::userid,
+                       AuthFixture::user_pwd)};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::OK);
+
+    string partition {"Bennett,Chancelor"};
+    string row {"USA"};
+    string property {"Home"};
+    string prop_val {"Chicago"};
+    int put_result {put_entity (AuthFixture::addr, AuthFixture::table, partition, row, property, prop_val)};
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+    
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+                  string(AuthFixture::addr)
+                  + update_entity_auth + "/"
+                  + AuthFixture::table + "/"
+                  + token_res.second + "/"
+                  + partition + "/"
+                  + row,
+                  value::object (vector<pair<string,value>>
+                                   {make_pair(added_prop.first,
+                                              value::string(added_prop.second))})
+                  )};
+    CHECK_EQUAL(status_codes::NotFound, result.first);
+  }
+
+  
 
   /*
   //Testing non-existant user
