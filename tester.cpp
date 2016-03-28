@@ -1333,6 +1333,7 @@ SUITE(UPDATE_AUTH) {
                                               value::string(added_prop.second))})
                   )};
     CHECK_EQUAL(status_codes::NotFound, result.first);
+    CHECK_EQUAL(status_codes::OK, delete_entity (AuthFixture::addr, AuthFixture::table, partition, row));
   }
 
   /*
