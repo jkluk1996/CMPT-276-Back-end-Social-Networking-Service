@@ -1049,7 +1049,13 @@ public:
   }
 };
 
+/*
+  Test Suite for updating with authorization operations
+ */
 SUITE(UPDATE_AUTH) {
+  /*
+    A test of PUT property given update token
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth) {
     pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
 
@@ -1094,7 +1100,9 @@ SUITE(UPDATE_AUTH) {
     compare_json_values (expect, ret_res.second);
   }
 
-  //Testing user not found
+  /*
+    Testing user not found
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_UserNotFound) {
     cout << "Requesting token" << endl;
     pair<status_code,string> token_res {
@@ -1105,7 +1113,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL (token_res.first, status_codes::NotFound);
   }
 
-  //Testing empty password
+  /*
+    Testing empty password
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_EmptyPasword) {
     cout << "Requesting token" << endl;
     pair<status_code,string> token_res {
@@ -1116,7 +1126,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL (token_res.first, status_codes::BadRequest);
   }
 
-  //Testing when userid was missing from the URI
+  /*
+    Testing when userid is missing from the URI
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_MissingUserid) {
     cout << "Requesting token" << endl;
     string password = AuthFixture::user_pwd;
@@ -1132,7 +1144,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL (token_res.first, status_codes::BadRequest);
   }
 
-  //Testing message body did not have a property named ‘Password’
+  /*
+    Testing message body did not have a property named ‘Password’
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_BadPropName) {
     cout << "Requesting token" << endl;
     string password = AuthFixture::user_pwd;
@@ -1149,7 +1163,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL (token_res.first, status_codes::BadRequest);
   }
 
-  //Testing message body included one or more properties other than 'Password'
+  /*
+    Testing message body included one or more properties other than 'Password'
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_TooMuchProps) {
     cout << "Requesting token" << endl;
     string password = AuthFixture::user_pwd;
@@ -1167,7 +1183,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL (token_res.first, status_codes::BadRequest);
   }
 
-  //Testing less than four parameters 
+  /*
+    Testing when message body has less than four parameters 
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_TooFewParam) {
     pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
 
@@ -1193,7 +1211,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL(status_codes::BadRequest, result.first);
   }
 
-  //Testing table not found
+  /*
+    Testing when table not found
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_TableNotFound) {
     pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
 
@@ -1220,7 +1240,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL(status_codes::NotFound, result.first);
   }
 
-  //Testing entity with partition not found
+  /*
+    Testing when partition not found
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_PartitionNotFound) {
     pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
 
@@ -1247,7 +1269,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL(status_codes::NotFound, result.first);
   }
 
-  //Testing entity with row not found
+  /*
+    Testing when row not found
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_RowNotFound) {
     pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
 
@@ -1274,7 +1298,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL(status_codes::NotFound, result.first);
   }
 
-  //Testing when token did not authorize access to specified entity
+  /*
+    Testing when token did not authorize access to specified entity
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_TokenWrongEntity) {
     pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
 
@@ -1309,7 +1335,9 @@ SUITE(UPDATE_AUTH) {
     CHECK_EQUAL(status_codes::NotFound, result.first);
   }
 
-  //Testing when the specified entity exists but the token is only valid for reading, not updating
+  /*
+    Testing when the specified entity exists but the token is only valid for reading, not updating
+   */
   TEST_FIXTURE(AuthFixture,  PutAuth_WrongToken) {
     pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
 
