@@ -1219,7 +1219,7 @@ SUITE(GET_AUTH) {
 	string row {"Katherines,The"};
 	string property {"Home"};
 	string prop_val {"Vancouver"};
-	int put_result {put_entity (GetFixture::addr, GetFixture::table, partition, row, property, prop_val)};
+	int put_result {put_entity (AuthFixture::addr, AuthFixture::table, partition, row, property, prop_val)};
 	cerr << "put result " << put_result << endl;
 	assert (put_result == status_codes::OK);
 
@@ -1229,8 +1229,8 @@ SUITE(GET_AUTH) {
 				  + read_entity_auth + "/"
 				  + AuthFixture::table + "/"
 				  + token_res.second + "/"
-				  + AuthFixture::partition + "/"
-				  + AuthFixture::row)};
+				  + partition + "/"
+				  + row)};
 
 	CHECK_EQUAL(status_codes::NotFound, result.first);
 	CHECK_EQUAL(status_codes::OK, delete_entity (AuthFixture::addr, AuthFixture::table, partition, row));
@@ -1256,10 +1256,10 @@ SUITE(GET_AUTH) {
 				  + AuthFixture::table + "/"
 				  + token_res.second + "/"
 				  + AuthFixture::partition)};
-	}	
+
 	CHECK_EQUAL(status_codes::BadRequest, result.first);
-		
-	}
+  }
+}
 
 
 
@@ -1395,11 +1395,13 @@ SUITE(UPDATE_AUTH) {
                            added_prop,
                            make_pair("gender", 
                                      "male"),
-							make_pair("Home",
-									  "Chicago")}
-                         )};
+              							make_pair("Home",
+              									     "Chicago")}
+                                      )};
                              
     compare_json_values (expect, ret_res.second);
+    CHECK_EQUAL(status_codes::OK, delete_entity (AuthFixture::addr, AuthFixture::table, partition, "USA"));
+    CHECK_EQUAL(status_codes::OK, delete_entity (AuthFixture::addr, AuthFixture::auth_table, AuthFixture::auth_table_partition, row));
   }
   
   //Testing wrong password
