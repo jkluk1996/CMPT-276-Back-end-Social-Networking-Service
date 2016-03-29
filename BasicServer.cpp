@@ -66,14 +66,6 @@ using prop_vals_t = vector<pair<string,value>>;
 
 constexpr const char* def_url = "http://localhost:34568";
 
-<<<<<<< HEAD
-const string create_table {"CreateTable"};
-const string delete_table {"DeleteTable"};
-const string update_entity {"UpdateEntity"};
-const string delete_entity {"DeleteEntity"};
-const string add_property {"AddProperty"};
-const string update_property {"UpdateProperty"};
-=======
 //ADDED changed to contain Admin
 //Could change admin operations to contain 'admin' in variable name
 const string create_table {"CreateTableAdmin"};
@@ -88,7 +80,6 @@ const string update_entity_auth {"UpdateEntityAuth"};
 
 const string add_property {"AddPropertyAdmin"};
 const string update_property {"UpdatePropertyAdmin"};
->>>>>>> 875e8a7fb6acb2c86d5c7981e7cb789cc83419d9
 
 /*
   Cache of opened tables
@@ -206,46 +197,19 @@ void handle_get(http_request message) {
     return;
   }
 
-<<<<<<< HEAD
-  // Missing or too many operatoins
-  if (paths.size() == 2 || paths.size() >= 4) {
-=======
 
   // Missing or too many operatoins
   if (paths.size() == 3) {
->>>>>>> 875e8a7fb6acb2c86d5c7981e7cb789cc83419d9
     message.reply(status_codes::BadRequest);
     return;
   }
 
-<<<<<<< HEAD
-  cloud_table table {table_cache.lookup_table(paths[0])};
-=======
   cloud_table table {table_cache.lookup_table(paths[1])};
->>>>>>> 875e8a7fb6acb2c86d5c7981e7cb789cc83419d9
   if ( ! table.exists()) {
     message.reply(status_codes::NotFound);
     return;
   }
   
-<<<<<<< HEAD
-  if (paths.size() == 1) {
-    table_query query {};
-    table_query_iterator end;
-    table_query_iterator it = table.execute_query(query);
-    vector<value> key_vec;
-
-    // GET entries by properties
-    const auto v = get_json_body(message);
-    if (v.size() != 0) {
-      for (auto i = v.begin(); i != v.end(); ++i) {
-        if (i->second != "*") {
-          message.reply(status_codes::BadRequest);
-        }
-      }   
-      while(it != end) {
-        get_by_properties(it, v, key_vec);
-=======
   //ADDED
   if (paths[0] == read_entity) {
     if (paths.size() == 2) {
@@ -278,24 +242,11 @@ void handle_get(http_request message) {
           make_pair("Row", value::string(it->row_key()))};
         keys = get_properties(it->properties(), keys);
         key_vec.push_back(value::object(keys));
->>>>>>> 875e8a7fb6acb2c86d5c7981e7cb789cc83419d9
         ++it;
       }
       message.reply(status_codes::OK, value::array(key_vec));
       return;
     }
-<<<<<<< HEAD
-    
-    // GET all entries in table
-    while (it != end) {
-      cout << "Key: " << it->partition_key() << " / " << it->row_key() << endl;
-      prop_vals_t keys {
-	make_pair("Partition",value::string(it->partition_key())),
-	make_pair("Row", value::string(it->row_key()))};
-      keys = get_properties(it->properties(), keys);
-      key_vec.push_back(value::object(keys));
-      ++it;
-=======
 
     // Get entries by partitions
     if (paths[3] == "*") {
@@ -316,7 +267,6 @@ void handle_get(http_request message) {
       }
       message.reply(status_codes::OK, value::array(key_vec)); 
       return;
->>>>>>> 875e8a7fb6acb2c86d5c7981e7cb789cc83419d9
     }
 
     // GET specific entry: Partition == paths[2], Row == paths[3]
@@ -339,36 +289,6 @@ void handle_get(http_request message) {
       message.reply(status_codes::OK);
   }
 
-<<<<<<< HEAD
-  // Get entries by partitions
-  if (paths[2] == "*") {
-    table_query query {};
-    table_query_iterator end;
-    table_query_iterator it = table.execute_query(query);
-    vector<value> key_vec;
-    while (it != end) {
-      if (it->partition_key() == paths[1])
-      {
-      cout << "Key: " << it->partition_key() << " / " << it->row_key() << endl;
-      prop_vals_t keys {
-         make_pair("Row", value::string(it->row_key()))};
-      keys = get_properties(it->properties(), keys);
-      key_vec.push_back(value::object(keys));
-      }
-      ++it;
-    }
-    message.reply(status_codes::OK, value::array(key_vec)); 
-    return;
-  }
-
-  // GET specific entry: Partition == paths[1], Row == paths[2]
-  table_operation retrieve_operation {table_operation::retrieve_entity(paths[1], paths[2])};
-  table_result retrieve_result {table.execute(retrieve_operation)};
-  cout << "HTTP code: " << retrieve_result.http_status_code() << endl;
-  if (retrieve_result.http_status_code() == status_codes::NotFound) {
-    message.reply(status_codes::NotFound);
-    return;
-=======
   // Added
   // Read entity with authorization, return them as JSON
   else if (paths[0] == read_entity_auth) { 
@@ -386,7 +306,6 @@ void handle_get(http_request message) {
       else
         message.reply(status_codes::OK);
   }
->>>>>>> 875e8a7fb6acb2c86d5c7981e7cb789cc83419d9
   }
 
 }
@@ -441,15 +360,6 @@ void handle_put(http_request message) {
     return;
   }
 
-<<<<<<< HEAD
-  // Update entity
-  if (paths[0] == update_entity) {
-  	table_entity entity {paths[2], paths[3]};
-    cout << "Update " << entity.partition_key() << " / " << entity.row_key() << endl;
-    table_entity::properties_type& properties = entity.properties();
-    for (const auto v : get_json_body(message)) {
-      properties[v.first] = entity_property {v.second};
-=======
   try{
     // Update entity
     if (paths[0] == update_entity) {
@@ -464,7 +374,6 @@ void handle_put(http_request message) {
       table_result op_result {table.execute(operation)};
 
       message.reply(status_codes::OK);
->>>>>>> 875e8a7fb6acb2c86d5c7981e7cb789cc83419d9
     }
 
     // Add property
@@ -543,60 +452,6 @@ void handle_put(http_request message) {
     }
   }
 
-<<<<<<< HEAD
-  // Add property
-  else if (paths[0] == add_property) {
-    const auto v = get_json_body(message);
-
-    if (v.size() == 1) {
-      table_query query {};
-      table_query_iterator end;
-      table_query_iterator it = table.execute_query(query);
-
-      while(it != end) {
-        table_entity::properties_type properties = it->properties();
-        properties[v.begin()->first] = v.begin()->second;
-        cout << "Update " << it->partition_key() << "/" << it->row_key() << endl;
-        cout << "Added Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;;
-        ++it;
-      }
-      message.reply(status_codes::OK);
-    }
-    
-    else {
-      message.reply(status_codes::BadRequest);
-    }
-  }
-
-  // Update property
-  else if (paths[0] == update_property) {
-    const auto v = get_json_body(message);
-
-    if (v.size() == 1) {
-      table_query query {};
-      table_query_iterator end;
-      table_query_iterator it = table.execute_query(query);
-
-      while(it != end) {
-        table_entity::properties_type properties = it->properties();
-        if (properties.find(v.begin()->first) != properties.end()) {
-          properties[v.begin()->first] = v.begin()->second;
-          cout << "Update " << it->partition_key() << "/" << it->row_key() << endl;
-          cout << "Updated Property: " << v.begin()->first << " Value: " << properties[v.begin()->first].string_value() << endl;;
-        }
-        ++it;
-      }
-      message.reply(status_codes::OK);
-    }
-
-    else {
-      message.reply(status_codes::BadRequest);
-    }
-  }
-
-  else {
-    message.reply(status_codes::BadRequest);
-=======
   catch (const storage_exception& e) {
     cout << "Azure Table Storage error: " << e.what() << endl;
     cout << e.result().extended_error().message() << endl;
@@ -604,7 +459,6 @@ void handle_put(http_request message) {
       message.reply(status_codes::Forbidden);
     else
       message.reply(status_codes::InternalError);
->>>>>>> 875e8a7fb6acb2c86d5c7981e7cb789cc83419d9
   }
 }
 
