@@ -159,7 +159,7 @@ unordered_map<string,string> get_json_body(http_request message) {
 	Given entity at table_query_iterator-it, 
   push entitiy into vector-key_vec if it contains specified properties from map
  */
-void get_by_properties (const table_query_iterator& it, const unordered_map<string,string>& map, vector<value>& key_vec){
+void get_by_properties (const table_query_iterator& it, const unordered_map<string,string>& map, vector<value>& key_vec) {
   table_entity::properties_type properties = it->properties();
 
   bool contains_property {true};
@@ -210,7 +210,7 @@ void handle_get(http_request message) {
     return;
   }
   
-  //ADDED
+  // Added
   if (paths[0] == read_entity) {
     if (paths.size() == 2) {
       table_query query {};
@@ -248,7 +248,7 @@ void handle_get(http_request message) {
       return;
     }
 
-    // Get entries by partitions
+    // GET entries by partitions
     if (paths[3] == "*") {
       table_query query {};
       table_query_iterator end;
@@ -305,7 +305,7 @@ void handle_get(http_request message) {
         message.reply(status_codes::OK, value::object(values));
       else
         message.reply(status_codes::OK);
-  }
+    }
   }
 
   else {
@@ -442,7 +442,7 @@ void handle_put(http_request message) {
       }
     }
 
-    //Added
+    // Added
     // Update entity with authorization
     else if (paths[0] == update_entity_auth) {
       unordered_map<string, string> message_properties = get_json_body(message);
@@ -494,8 +494,8 @@ void handle_delete(http_request message) {
   else if (paths[0] == delete_entity) {
     // For delete entity, also need partition and row
     if (paths.size() < 4) {
-	message.reply(status_codes::BadRequest);
-	return;
+	    message.reply(status_codes::BadRequest);
+	    return;
     }
     table_entity entity {paths[2], paths[3]};
     cout << "Delete " << entity.partition_key() << " / " << entity.row_key()<< endl;
@@ -505,7 +505,7 @@ void handle_delete(http_request message) {
 
     int code {op_result.http_status_code()};
     if (code == status_codes::OK || 
-	code == status_codes::NoContent)
+	      code == status_codes::NoContent)
       message.reply(status_codes::OK);
     else
       message.reply(code);

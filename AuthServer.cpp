@@ -213,13 +213,12 @@ void handle_get(http_request message) {
     && !(message_properties.begin()->second.empty())) {
 
     // GetReadToken
-
     if(paths[0] == get_read_token_op) {
       if (message_properties.begin()->second == properties[auth_table_password_prop].string_value()) {
         pair<status_code,string> token = do_get_token(data_table, 
         properties[auth_table_partition_prop].string_value(), 
         properties[auth_table_row_prop].string_value(), 
-        table_shared_access_policy::permissions::read); // read-only
+        table_shared_access_policy::permissions::read);
 
         vector<pair<string,value>> json_token {make_pair("token", value::string(token.second))};
         message.reply(token.first, value::object(json_token));
@@ -232,7 +231,6 @@ void handle_get(http_request message) {
     }
 
     // GetUpdateToken
-
     else if(paths[0] == get_update_token_op) {
       if (message_properties.begin()->second == properties[auth_table_password_prop].string_value()) {
         pair<status_code,string> token = do_get_token(data_table, 
