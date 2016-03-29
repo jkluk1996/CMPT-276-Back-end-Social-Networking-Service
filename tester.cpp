@@ -1101,6 +1101,93 @@ SUITE(UPDATE_AUTH) {
     compare_json_values (expect, ret_res.second);
   }
   
+  /*
+	Another simple test for Auth update
+  */
+  
+  TEST_FIXTURE(AuthFixture,  PutAuth2) {
+    pair<string,string> added_prop {make_pair(string("born"),string("1942"))};
+	
+	//creating another entity and putting onto data table
+	string partition {"Bennett,Chancelor"};
+    string row {"USA"};
+    string property {"Home"};
+    string prop_val {"Chicago"};
+    int put_result {put_entity (AuthFixture::addr, AuthFixture::table, partition, row, property, prop_val)};
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+	
+	property = "gender";
+    prop_val = "male";
+    put_result = put_entity (AuthFixture::addr, AuthFixture::table, partition, row, property, prop_val);
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+	
+    row = "EZPZ";
+    property = "Password";
+    prop_val = "foo";
+    put_result = put_entity (AuthFixture::addr, AuthFixture::auth_table, AuthFixture::auth_table_partition, row, property, prop_val);
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+
+	
+    property = "DataPartition";
+    prop_val = "Bennett,Chancelor";
+    put_result = put_entity (AuthFixture::addr, AuthFixture::auth_table, AuthFixture::auth_table_partition, row, property, prop_val);
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+	
+    property = "DataRow";
+    prop_val = "USA";
+    put_result = put_entity (AuthFixture::addr, AuthFixture::auth_table, AuthFixture::auth_table_partition, row, property, prop_val);
+    cerr << "put result " << put_result << endl;
+    assert (put_result == status_codes::OK);
+	
+	//testing Auth Server
+    cout << "Requesting token" << endl;
+    pair<status_code,string> token_res {
+      get_update_token(AuthFixture::auth_addr,
+                       row,
+                       "foo")};
+    cout << "Token response " << token_res.first << endl;
+    CHECK_EQUAL (token_res.first, status_codes::OK);
+    
+	
+    pair<status_code,value> result {
+      do_request (methods::PUT,
+                  string(AuthFixture::addr)
+                  + update_entity_auth + "/"
+                  + AuthFixture::table + "/"
+                  + token_res.second + "/"
+                  + partition + "/"
+                  + "USA",
+                  value::object (vector<pair<string,value>>
+                                   {make_pair(added_prop.first,
+                                              value::string(added_prop.second))})
+                  )};
+    CHECK_EQUAL(status_codes::OK, result.first);
+    
+    pair<status_code,value> ret_res {
+      do_request (methods::GET,
+                  string(AuthFixture::addr)
+                  + read_entity_admin + "/"
+                  + AuthFixture::table + "/"
+                  + partition + "/"
+                  + "USA")};
+    CHECK_EQUAL (status_codes::OK, ret_res.first);
+    value expect {
+      build_json_object (
+                         vector<pair<string,string>> {
+                           added_prop,
+                           make_pair("gender", 
+                                     "male"),
+							make_pair("Home",
+									  "Chicago")}
+                         )};
+                             
+    compare_json_values (expect, ret_res.second);
+  }
+  
   //Testing wrong password
   TEST_FIXTURE(AuthFixture, PutAuth_WrongPassword){
 	  
