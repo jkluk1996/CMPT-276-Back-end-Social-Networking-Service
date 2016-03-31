@@ -1109,8 +1109,8 @@ SUITE(GET_AUTH) {
 	cout << "Requesting token" << endl;
 	pair<status_code,string> token_res {
 	  get_read_token(AuthFixture::auth_addr,
-					   "NonExistingUser",
-					   AuthFixture::user_pwd)};
+					   AuthFixture::userid,
+					   "WrongPassword")};
 	cout << "Token response " << token_res.first << endl;
 
 	CHECK_EQUAL (token_res.first, status_codes::NotFound);
