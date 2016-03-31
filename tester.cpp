@@ -1060,7 +1060,7 @@ SUITE(GET_AUTH) {
 	TEST_FIXTURE(AuthFixture,  GetAuth) {
 	cout << "Requesting token" << endl;
 	pair<status_code,string> token_res {
-	  get_update_token(AuthFixture::auth_addr,
+	  get_read_token(AuthFixture::auth_addr,
 					   AuthFixture::userid,
 					   AuthFixture::user_pwd)};
 	cout << "Token response " << token_res.first << endl;
@@ -1137,7 +1137,7 @@ SUITE(GET_AUTH) {
 	TEST_FIXTURE(AuthFixture,  GetAuth_TableNotFound) {
 	cout << "Requesting token" << endl;
 	pair<status_code,string> token_res {
-	  get_update_token(AuthFixture::auth_addr,
+	  get_read_token(AuthFixture::auth_addr,
 					   AuthFixture::userid,
 					   AuthFixture::user_pwd)};
 	cout << "Token response " << token_res.first << endl;
@@ -1161,7 +1161,7 @@ SUITE(GET_AUTH) {
 	TEST_FIXTURE(AuthFixture,  GetAuth_PartitionNotFound) {
 	cout << "Requesting token" << endl;
 	pair<status_code,string> token_res {
-	  get_update_token(AuthFixture::auth_addr,
+	  get_read_token(AuthFixture::auth_addr,
 					   AuthFixture::userid,
 					   AuthFixture::user_pwd)};
 	cout << "Token response " << token_res.first << endl;
@@ -1185,7 +1185,7 @@ SUITE(GET_AUTH) {
 	TEST_FIXTURE(AuthFixture,  GetAuth_RowNotFound) {
 	cout << "Requesting token" << endl;
 	pair<status_code,string> token_res {
-	  get_update_token(AuthFixture::auth_addr,
+	  get_read_token(AuthFixture::auth_addr,
 					   AuthFixture::userid,
 					   AuthFixture::user_pwd)};
 	cout << "Token response " << token_res.first << endl;
@@ -1209,7 +1209,7 @@ SUITE(GET_AUTH) {
 	TEST_FIXTURE(AuthFixture,  GetAuth_WrongEntity) {
 	cout << "Requesting token" << endl;
 	pair<status_code,string> token_res {
-	  get_update_token(AuthFixture::auth_addr,
+	  get_read_token(AuthFixture::auth_addr,
 					   AuthFixture::userid,
 					   AuthFixture::user_pwd)};
 	cout << "Token response " << token_res.first << endl;
@@ -1243,7 +1243,7 @@ SUITE(GET_AUTH) {
 	TEST_FIXTURE(AuthFixture,  GetAuth_LessThanFourParameters) {
 	cout << "Requesting token" << endl;
 	pair<status_code,string> token_res {
-	  get_update_token(AuthFixture::auth_addr,
+	  get_read_token(AuthFixture::auth_addr,
 					   AuthFixture::userid,
 					   AuthFixture::user_pwd)};
 	cout << "Token response " << token_res.first << endl;
