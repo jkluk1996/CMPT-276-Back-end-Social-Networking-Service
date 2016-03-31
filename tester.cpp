@@ -336,7 +336,6 @@ pair<status_code,string> get_update_token(const string& addr,  const string& use
   }
 }
 
-//Added
 /*
   Utility to get a token good for reading a specific entry
   from a specific table for one day.
@@ -367,7 +366,6 @@ pair<status_code,string> get_read_token(const string& addr,  const string& useri
   but the table is left. See the comments in the code
   for the reason for this design.
  */
-//ADDED changed BasicFixture to GetFixture
 class GetFixture {
 public:
   static constexpr const char* addr {"http://localhost:34568/"};
@@ -1022,11 +1020,12 @@ public:
       throw std::exception();
     }
 
-    /*NOTE
+    /********************************************************
+      NOTE
       Assumes AuthTable previously created with curl
       Assumes AuthTable entity added with adduser.sh
       {"DataPartition":"USA","DataRow":"Franklin,Aretha","Partition":"Userid","Password":"user","Row":"user"}
-     */
+    ********************************************************/
     
     //Ensure userid and password in system
     int user_result {put_entity (addr,

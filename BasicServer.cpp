@@ -66,8 +66,6 @@ using prop_vals_t = vector<pair<string,value>>;
 
 constexpr const char* def_url = "http://localhost:34568";
 
-//ADDED changed to contain Admin
-//Could change admin operations to contain 'admin' in variable name
 const string create_table {"CreateTableAdmin"};
 const string delete_table {"DeleteTableAdmin"};
 
@@ -78,6 +76,7 @@ const string delete_entity {"DeleteEntityAdmin"};
 const string read_entity_auth {"ReadEntityAuth"};
 const string update_entity_auth {"UpdateEntityAuth"};
 
+// The two optional operations from Assignment 1
 const string add_property {"AddPropertyAdmin"};
 const string update_property {"UpdatePropertyAdmin"};
 
@@ -210,7 +209,6 @@ void handle_get(http_request message) {
     return;
   }
   
-  // Added
   if (paths[0] == read_entity) {
     if (paths.size() == 2) {
       table_query query {};
@@ -289,7 +287,6 @@ void handle_get(http_request message) {
       message.reply(status_codes::OK);
   }
 
-  // Added
   // Read entity with authorization, return them as JSON
   else if (paths[0] == read_entity_auth) { 
     if( !((read_with_token(message, tables_endpoint)).first == status_codes::OK) ) {
@@ -442,7 +439,6 @@ void handle_put(http_request message) {
       }
     }
 
-    // Added
     // Update entity with authorization
     else if (paths[0] == update_entity_auth) {
       unordered_map<string, string> message_properties = get_json_body(message);

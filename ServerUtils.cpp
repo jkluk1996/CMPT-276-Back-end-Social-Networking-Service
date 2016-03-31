@@ -135,7 +135,6 @@ status_code update_with_token (const http_request& message,
     storage_credentials creds {token};
     cloud_table_client client {endpoint_uri, creds};
 
-    //added
     table_operation retrieve_op {table_operation::retrieve_entity(partition, row)};
     cloud_table table_cred {client.get_table_reference(tname)};
     table_result retrieve_result {table_cred.execute(retrieve_op)};
@@ -152,7 +151,6 @@ status_code update_with_token (const http_request& message,
     }
 
     table_operation update_op {table_operation::merge_entity(entity)};
-    //cloud_table table_cred {client.get_table_reference(tname)};
     table_result update_result {table_cred.execute(update_op)};
     status_code status {static_cast<status_code> (update_result.http_status_code())};
     if (status == status_codes::NoContent || status == status_codes::OK)
