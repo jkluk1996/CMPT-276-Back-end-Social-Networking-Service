@@ -340,9 +340,9 @@ void handle_put(http_request message) {
         return;
       }
 
-      //added Getting internal error
+      //added note that when called with %20 in the status, i get service unavailable status code
       try {
-        pair<status_code,value> push_result {do_request (methods::PUT,
+        pair<status_code,value> push_result {do_request (methods::POST,
                                                          push_addr + 
                                                          push_status_op + "/" + 
                                                          data_partition + "/" +
@@ -352,9 +352,8 @@ void handle_put(http_request message) {
         message.reply(push_result.first);
       }
 
-      catch (const storage_exception& e) {
+      catch (const web::uri_exception& e) {
         cout << "Azure Table Storage error: " << e.what() << endl;
-        cout << e.result().extended_error().message() << endl;
         message.reply(status_codes::ServiceUnavailable);
       }
     }
