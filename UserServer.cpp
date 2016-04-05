@@ -233,7 +233,6 @@ void handle_post(http_request message) {
                                                        auth_props[auth_table_partition_prop], 
                                                        auth_props[auth_table_row_prop])};
           user_map[userid] = user_map_vals;
-          //cout << get<1>(user_map[userid]) << endl;
           //added Does this need to return token as second param?
           message.reply(result.first);
         }
@@ -298,6 +297,11 @@ void handle_put(http_request message) {
   }
 
   else if (paths[0] == "UpdateStatus") {
+    //Needs three parameters
+    if (paths.size() != 3) {
+      message.reply(status_codes::BadRequest);
+      return;
+    }
     message.reply(status_codes::NotImplemented);
   }
 

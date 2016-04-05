@@ -1,5 +1,5 @@
 /*
- Post Server code for CMPT 276, Spring 2016.
+ Push Server code for CMPT 276, Spring 2016.
  */
 
 #include <iostream>
@@ -66,6 +66,7 @@ void handle_get(http_request message) {
 void handle_post(http_request message) {
   string path {uri::decode(message.relative_uri().path())};
   cout << endl << "**** PostServer POST " << path << endl;
+  auto paths = uri::split_path(path);
   message.reply(status_codes::NotImplemented);
 }
 
@@ -101,7 +102,7 @@ void handle_delete(http_request message) {
   Wait for a carriage return, then shut the server down.
  */
 int main (int argc, char const * argv[]) {
-  cout << "PostServer: Opening listener" << endl;
+  cout << "PushServer: Opening listener" << endl;
   http_listener listener {def_url};
   //listener.support(methods::GET, &handle_get);
   listener.support(methods::POST, &handle_post);
@@ -109,11 +110,11 @@ int main (int argc, char const * argv[]) {
   //listener.support(methods::DEL, &handle_delete);
   listener.open().wait(); // Wait for listener to complete starting
 
-  cout << "Enter carriage return to stop AuthServer." << endl;
+  cout << "Enter carriage return to stop PushServer." << endl;
   string line;
   getline(std::cin, line);
 
   // Shut it down
   listener.close().wait();
-  cout << "PostServer closed" << endl;
+  cout << "PushServer closed" << endl;
 }
