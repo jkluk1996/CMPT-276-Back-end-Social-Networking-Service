@@ -73,10 +73,14 @@ const string auth_table_password_prop {"Password"};
 const string auth_table_partition_prop {"DataPartition"};
 const string auth_table_row_prop {"DataRow"};
 const string data_table_name {"DataTable"};
+const string data_table_friends_prop {"Friends"};
 
 /*
   A map that maps each userid  to a tuple comprising a token, a DataPartition, and a DataRow. 
   When the user signs off, the entry is erased from the map
+  get<0>(user_map[userid]) = token
+  get<1>(user_map[userid]) = DataPartition
+  get<2>(user_map[userid]) = DataRow
 */
 typedef tuple<string, string, string> three_tuple_string;
 unordered_map<string, three_tuple_string> user_map {};
@@ -138,7 +142,43 @@ void handle_get(http_request message) {
   string path {uri::decode(message.relative_uri().path())};
   cout << endl << "**** UserServer GET " << path << endl;
   auto paths = uri::split_path(path);
-  message.reply(status_codes::NotImplemented);
+  //Needs at least an operation and userid
+  if (paths.size() < 2) {
+    message.reply(status_codes::BadRequest);
+    return;
+  }
+
+  string userid {paths[1]};
+  if (user_map.find(userid) == user_map.end()) {
+      message.reply(status_codes::Forbidden);
+      return;
+  }
+
+  if (paths[0] == "ReadFriendList") {
+    pair<status_code,value> result {do_request (methods::GET,
+                                                addr +
+                                                read_entity_auth + "/" +
+                                                data_table_name + "/" + 
+                                                get<0>(user_map[userid]) + "/" +
+                                                get<1>(user_map[userid]) + "/" +
+                                                get<2>(user_map[userid]))}; 
+    
+    if (result.first == status_codes::OK) {
+      unordered_map<string, string> data_props {unpack_json_object (result.second)};
+      vector<pair<string,value>> json_friends {
+                make_pair(data_table_friends_prop, 
+                          value::string(data_props[data_table_friends_prop]))};
+      
+      message.reply(result.first, value::object(json_friends));
+    }
+    else {
+      message.reply(result.first);
+    }
+  }
+
+  else {
+    message.reply(status_codes::BadRequest);
+  }
 }
 
 /*
@@ -168,10 +208,10 @@ void handle_post(http_request message) {
                                                 get_update_token_op + "/" +
                                                 userid,
                                                 pwd)}; 
-    cout << "token " << result.second << endl;
 
     if (result.first == status_codes::OK) {
-      if (user_map.size() == 0){
+      if (user_map.find(userid) == user_map.end()){
+        cout << "token " << result.second << endl;
         string token {result.second["token"].as_string()};
         pair<status_code,value> get_auth_props {do_request (methods::GET,
                                                         addr +
@@ -180,19 +220,19 @@ void handle_post(http_request message) {
                                                         auth_table_userid_partition + "/" +
                                                         userid)};
 
-        unordered_map<string, string> userid_props {unpack_json_object (get_auth_props.second)};
+        unordered_map<string, string> auth_props {unpack_json_object (get_auth_props.second)};
         pair<status_code,value> exist_chk {do_request (methods::GET,
                                                        addr +
                                                        read_entity_auth + "/" +
                                                        data_table_name + "/" +
                                                        token + "/" +
-                                                       userid_props[auth_table_partition_prop] + "/" +
-                                                       userid_props[auth_table_row_prop])};
+                                                       auth_props[auth_table_partition_prop] + "/" +
+                                                       auth_props[auth_table_row_prop])};
 
         if (exist_chk.first == status_codes::OK) {
           three_tuple_string user_map_vals {make_tuple(token, 
-                                                       userid_props[auth_table_partition_prop], 
-                                                       userid_props[auth_table_row_prop])};
+                                                       auth_props[auth_table_partition_prop], 
+                                                       auth_props[auth_table_row_prop])};
           user_map[userid] = user_map_vals;
           //cout << get<1>(user_map[userid]) << endl;
           //added Does this need to return token as second param?
