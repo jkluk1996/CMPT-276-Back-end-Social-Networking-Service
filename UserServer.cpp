@@ -57,9 +57,7 @@ using prop_str_vals_t = vector<pair<string,string>>;
 constexpr const char* def_url = "http://localhost:34572";
 constexpr const char* addr {"http://localhost:34568/"};
 constexpr const char* auth_addr {"http://localhost:34570/"};
-
-const string read_entity_admin {"ReadEntityAdmin"};
-const string update_entity_admin {"UpdateEntityAdmin"};
+constexpr const char* push_addr {"http://localhost:34574/"};
 
 const string read_entity_auth {"ReadEntityAuth"};
 const string update_entity_auth {"UpdateEntityAuth"};
@@ -75,6 +73,10 @@ const string auth_table_partition_prop {"DataPartition"};
 const string auth_table_row_prop {"DataRow"};
 const string data_table_name {"DataTable"};
 const string data_table_friends_prop {"Friends"};
+const string data_table_status_prop {"Status"};
+
+const string read_friend_list_op {"ReadFriendList"};
+const string push_status_op {"PushStatus"};
 
 /*
   A map that maps each userid  to a tuple comprising a token, a DataPartition, and a DataRow. 
@@ -155,7 +157,7 @@ void handle_get(http_request message) {
       return;
   }
 
-  if (paths[0] == "ReadFriendList") {
+  if (paths[0] == read_friend_list_op) {
     pair<status_code,value> result {do_request (methods::GET,
                                                 addr +
                                                 read_entity_auth + "/" +
@@ -297,22 +299,69 @@ void handle_put(http_request message) {
       return;
   }
 
+  string token {get<0>(user_map[userid])};
+  string data_partition {get<1>(user_map[userid])};
+  string data_row {get<2>(user_map[userid])};
+
   if (paths[0] == "AddFriend") {
     message.reply(status_codes::NotImplemented);
   }
 
-  else if (paths[0] == "UnFriend")
-  {
+  else if (paths[0] == "UnFriend") {
     message.reply(status_codes::NotImplemented);
   }
 
   else if (paths[0] == "UpdateStatus") {
     //Needs three parameters
     if (paths.size() != 3) {
-      message.reply(status_codes::BadRequest);
+      message.reply(status_codes::BadRequest);  
       return;
     }
-    message.reply(status_codes::NotImplemented);
+
+    string status {paths[2]};
+    pair<status_code,value> update_result {do_request (methods::PUT,
+                                                addr +
+                                                update_entity_auth + "/" +
+                                                data_table_name + "/" +
+                                                token + "/" +
+                                                data_partition + "/" +
+                                                data_row,
+                                                value::object (vector<pair<string,value>>
+                                                          {make_pair(data_table_status_prop,
+                                                                     value::string(status))}))};  
+    if (update_result.first == status_codes::OK) {
+      pair<status_code,value> get_friends {do_request (methods::GET,
+                                                       string(def_url) + "/" + 
+                                                       read_friend_list_op + "/" + 
+                                                       userid)};
+
+      if (get_friends.first != status_codes::OK) {
+        message.reply(get_friends.first);
+        return;
+      }
+
+      //added Getting internal error
+      try {
+        pair<status_code,value> push_result {do_request (methods::PUT,
+                                                         push_addr + 
+                                                         push_status_op + "/" + 
+                                                         data_partition + "/" +
+                                                         data_row + "/" + 
+                                                         status,
+                                                         get_friends.second)};
+        message.reply(push_result.first);
+      }
+
+      catch (const storage_exception& e) {
+        cout << "Azure Table Storage error: " << e.what() << endl;
+        cout << e.result().extended_error().message() << endl;
+        message.reply(status_codes::ServiceUnavailable);
+      }
+    }
+
+    else {
+      message.reply(update_result.first);
+    }
   }
 
   else {
