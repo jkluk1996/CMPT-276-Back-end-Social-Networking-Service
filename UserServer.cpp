@@ -66,6 +66,7 @@ const string update_entity_auth {"UpdateEntityAuth"};
 
 const string get_read_token_op {"GetReadToken"};
 const string get_update_token_op {"GetUpdateToken"};
+const string get_update_data_op {"GetUpdateData"};
 
 const string auth_table_name {"AuthTable"};
 const string auth_table_userid_partition {"Userid"};
@@ -201,25 +202,23 @@ void handle_post(http_request message) {
         vector<pair<string,string>> 
           {make_pair(message_properties.begin()->first, 
                      message_properties.begin()->second)})};
+
   if (paths[0] == "SignOn") {
     pair<status_code,value> result {do_request (methods::GET,
                                                 auth_addr +
-                                                get_update_token_op + "/" +
+                                                get_update_data_op + "/" +
                                                 userid,
                                                 pwd)}; 
 
     if (result.first == status_codes::OK) {
       if (user_map.find(userid) == user_map.end()){
-        cout << "token " << result.second << endl;
+        unordered_map<string, string> auth_props {unpack_json_object (result.second)};
         string token {result.second["token"].as_string()};
-        pair<status_code,value> get_auth_props {do_request (methods::GET,
-                                                        addr +
-                                                        read_entity_admin + "/" +
-                                                        auth_table_name + "/" +
-                                                        auth_table_userid_partition + "/" +
-                                                        userid)};
+        
+        cout << "token: " << token << endl;
+        cout << auth_table_partition_prop << ": " << auth_props[auth_table_partition_prop] << endl;
+        cout << auth_table_row_prop << ": " << auth_props[auth_table_row_prop] << endl;
 
-        unordered_map<string, string> auth_props {unpack_json_object (get_auth_props.second)};
         pair<status_code,value> exist_chk {do_request (methods::GET,
                                                        addr +
                                                        read_entity_auth + "/" +
