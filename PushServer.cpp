@@ -13,10 +13,8 @@
 #include <was/common.h>
 #include <was/table.h>
 
-#include "TableCache.h"
 #include "make_unique.h"
-
-#include "azure_keys.h"
+#include "ClientUtils.h"
 
 using azure::storage::storage_exception;
 using azure::storage::cloud_table;
@@ -53,11 +51,6 @@ using web::http::experimental::listener::http_listener;
 using prop_str_vals_t = vector<pair<string,string>>;
 
 constexpr const char* def_url = "http://localhost:34574";
-
-/*
-  Cache of opened tables
- */
-TableCache table_cache {};
 
 /*
   Top-level routine for processing all HTTP GET requests.
@@ -108,10 +101,7 @@ void handle_delete(http_request message) {
   Wait for a carriage return, then shut the server down.
  */
 int main (int argc, char const * argv[]) {
-  cout << "PushServer: Parsing connection string" << endl;
-  table_cache.init (storage_connection_string);
-
-  cout << "PushServer: Opening listener" << endl;
+  cout << "PostServer: Opening listener" << endl;
   http_listener listener {def_url};
   //listener.support(methods::GET, &handle_get);
   listener.support(methods::POST, &handle_post);
@@ -119,7 +109,7 @@ int main (int argc, char const * argv[]) {
   //listener.support(methods::DEL, &handle_delete);
   listener.open().wait(); // Wait for listener to complete starting
 
-  cout << "Enter carriage return to stop PostServer." << endl;
+  cout << "Enter carriage return to stop AuthServer." << endl;
   string line;
   getline(std::cin, line);
 
