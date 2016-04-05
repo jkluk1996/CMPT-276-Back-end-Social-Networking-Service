@@ -202,7 +202,6 @@ void handle_post(http_request message) {
           {make_pair(message_properties.begin()->first, 
                      message_properties.begin()->second)})};
   if (paths[0] == "SignOn") {
-
     pair<status_code,value> result {do_request (methods::GET,
                                                 auth_addr +
                                                 get_update_token_op + "/" +
@@ -276,7 +275,36 @@ void handle_post(http_request message) {
 void handle_put(http_request message) {
   string path {uri::decode(message.relative_uri().path())};
   cout << endl << "**** UserServer PUT " << path << endl;
-  message.reply(status_codes::NotImplemented);
+  auto paths = uri::split_path(path);
+  //Needs at least an operation and userid
+  if (paths.size() < 2) {
+    message.reply(status_codes::BadRequest);
+    return;
+  }
+
+  string userid {paths[1]};
+  if (user_map.find(userid) == user_map.end()) {
+      message.reply(status_codes::Forbidden);
+      return;
+  }
+
+  if (paths[0] == "AddFriend") {
+    message.reply(status_codes::NotImplemented);
+  }
+
+  else if (paths[0] == "UnFriend")
+  {
+    message.reply(status_codes::NotImplemented);
+  }
+
+  else if (paths[0] == "UpdateStatus") {
+    message.reply(status_codes::NotImplemented);
+  }
+
+  else {
+    message.reply(status_codes::BadRequest);
+  }
+
 }
 
 /*
