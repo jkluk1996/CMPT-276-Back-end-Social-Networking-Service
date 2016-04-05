@@ -197,13 +197,19 @@ void handle_post(http_request message) {
 
   string userid {paths[1]};
   unordered_map<string, string> message_properties {get_json_body(message)};
-  value pwd {
+
+  if (paths[0] == "SignOn") {
+    if (message_properties.size() != 1) {
+      message.reply(status_codes::BadRequest);
+      return;
+    }
+
+    value pwd {
     build_json_object (
         vector<pair<string,string>> 
           {make_pair(message_properties.begin()->first, 
                      message_properties.begin()->second)})};
 
-  if (paths[0] == "SignOn") {
     pair<status_code,value> result {do_request (methods::GET,
                                                 auth_addr +
                                                 get_update_data_op + "/" +
@@ -252,6 +258,11 @@ void handle_post(http_request message) {
   }
 
   else if (paths[0] == "SignOff") {
+    if (message_properties.size() != 0) {
+      message.reply(status_codes::BadRequest);
+      return;
+    }
+
     if (user_map.find(userid) != user_map.end()) {
       user_map.erase(userid);
       message.reply(status_codes::OK);
