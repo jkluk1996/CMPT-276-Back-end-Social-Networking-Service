@@ -64,6 +64,7 @@ const string data_table_name {"DataTable"};
 
 const string get_read_token_op {"GetReadToken"};
 const string get_update_token_op {"GetUpdateToken"};
+const string get_update_data_op {"GetUpdateData"};
 
 /*
   Cache of opened tables
@@ -249,6 +250,26 @@ void handle_get(http_request message) {
       }
     }
 
+    else if (paths[0] == get_update_data_op) {
+      if (message_properties.begin()->second == properties[auth_table_password_prop].string_value()) {
+        pair<status_code,string> token = do_get_token(data_table, 
+        properties[auth_table_partition_prop].string_value(), 
+        properties[auth_table_row_prop].string_value(), 
+        table_shared_access_policy::permissions::read | 
+        table_shared_access_policy::permissions::update);
+
+        vector<pair<string,value>> json_data {make_pair("token", value::string(token.second)), 
+                                              make_pair(auth_table_partition_prop, value::string(properties[auth_table_partition_prop].string_value())), 
+                                              make_pair(auth_table_row_prop, value::string(properties[auth_table_row_prop].string_value()))};
+        
+        message.reply(token.first, value::object(json_data));
+      }
+
+      else {
+        message.reply(status_codes::NotFound);
+        return;
+      }
+    }
   }
   else {
     message.reply(status_codes::BadRequest);
