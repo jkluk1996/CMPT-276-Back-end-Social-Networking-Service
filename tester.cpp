@@ -55,6 +55,12 @@ const string get_update_token_op {"GetUpdateToken"};
 const string add_property_admin {"AddPropertyAdmin"};
 const string update_property_admin {"UpdatePropertyAdmin"};
 
+const string sign_on_op {"SignOn"};
+const string sign_off_op {"SignOff"};
+const string read_friend_list_op {"ReadFriendList"};
+const string update_status_op {"UpdateStatus"};
+const string push_status_op {"PushStatus"};
+
 /*
   Make an HTTP request, returning the status code and any JSON value in the body
 
@@ -1678,5 +1684,103 @@ SUITE(UPDATE_AUTH) {
                                               value::string(added_prop.second))})
                   )};
     CHECK_EQUAL(status_codes::Forbidden, result.first);
+  }
+}
+
+
+class UserFixture {
+public:
+  static constexpr const char* addr {"http://localhost:34568/"};
+  static constexpr const char* user_addr {"http://localhost:34572/"};
+  static constexpr const char* auth_addr {"http://localhost:34570/"};
+
+  static constexpr const char* userid {"user"};
+  static constexpr const char* user_pwd {"user"};
+  static constexpr const char* auth_table {"AuthTable"};
+  static constexpr const char* auth_table_partition {"Userid"};
+  static constexpr const char* auth_pwd_prop {"Password"};
+
+  static constexpr const char* table {"DataTable"};
+  static constexpr const char* partition {"USA"};
+  static constexpr const char* row {"Franklin,Aretha"};
+  static constexpr const char* friends_property {"Friends"};
+  static constexpr const char* status_property {"Status"};
+  static constexpr const char* updates_property {"Updates"};
+
+public:
+  UserFixture() {
+    int make_result {create_table(addr, table)};
+    cerr << "create result " << make_result << endl;
+    if (make_result != status_codes::Created && make_result != status_codes::Accepted) {
+      throw std::exception();
+    }
+
+    //Initialize user with empty friends, status and updates property
+    int put_result {put_entity (addr, table, partition, row, friends_property, "")};
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    put_result = put_entity (addr, table, partition, row, status_property, "");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    put_result = put_entity (addr, table, partition, row, updates_property, "");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+
+    /********************************************************
+      NOTE
+      Assumes AuthTable previously created with curl
+      Assumes AuthTable entity added with adduser.sh
+      {"DataPartition":"USA","DataRow":"Franklin,Aretha","Partition":"Userid","Password":"user","Row":"user"}
+    ********************************************************/
+    
+    //Ensure userid and password in system
+    int user_result {put_entity (addr,
+                                 auth_table,
+                                 auth_table_partition,
+                                 userid,
+                                 auth_pwd_prop,
+                                 user_pwd)};
+    cerr << "user auth table insertion result " << user_result << endl;
+    if (user_result != status_codes::OK) {
+      throw std::exception();
+    }
+  }
+
+  ~UserFixture() {
+    int del_ent_result {delete_entity (addr, table, partition, row)};
+    if (del_ent_result != status_codes::OK) {
+      throw std::exception();
+    }
+  }
+};
+
+SUITE(USER_OP) {
+  TEST_FIXTURE(UserFixture, UserSession) {
+    //Signing In
+    pair<status_code,value> sign_on_result {
+      do_request (methods::POST,
+            string(UserFixture::user_addr) +
+            sign_on_op + "/" +
+            UserFixture::userid,
+            value::object (vector<pair<string,value>>
+                                   {make_pair(string(UserFixture::auth_pwd_prop),
+                                              value::string(UserFixture::user_pwd))}))};
+    CHECK_EQUAL(status_codes::OK, sign_on_result.first);
+
+    //Signing Off
+    pair<status_code,value> sign_off_result {do_request (methods::POST,
+                                             string(UserFixture::user_addr) +
+                                             sign_off_op + "/" +
+                                             UserFixture::userid)};
+    CHECK_EQUAL(status_codes::OK, sign_off_result.first);
   }
 }
