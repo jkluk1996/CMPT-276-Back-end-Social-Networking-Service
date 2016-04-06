@@ -59,6 +59,7 @@ const string update_entity_admin {"UpdateEntityAdmin"};
 
 const string data_table_name {"DataTable"};
 const string data_table_friends_prop {"Friends"};
+const string data_table_status_prop {"Status"};
 const string data_table_update_prop {"Updates"};
 
 /*
@@ -141,9 +142,10 @@ void handle_post(http_request message) {
       }
 
       unordered_map<string,string> user_friend_properties {unpack_json_object(get_old_updates.second)};
-      string updates {user_friend_properties[data_table_friends_prop]};
-
+      string updates {user_friend_properties[data_table_update_prop]};
+      cout << "Old Updates: " << updates << endl;
       updates += new_status;
+      cout << "Updates: " << updates << endl;
 
       pair<status_code,value> update_friend {do_request (methods::PUT,
                                                          addr + 
