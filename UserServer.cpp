@@ -75,7 +75,10 @@ const string data_table_name {"DataTable"};
 const string data_table_friends_prop {"Friends"};
 const string data_table_status_prop {"Status"};
 
+const string sign_on_op {"SignOn"};
+const string sign_off_op {"SignOff"};
 const string read_friend_list_op {"ReadFriendList"};
+const string update_status_op {"UpdateStatus"};
 const string push_status_op {"PushStatus"};
 
 /*
@@ -200,7 +203,7 @@ void handle_post(http_request message) {
   string userid {paths[1]};
   unordered_map<string, string> message_properties {get_json_body(message)};
 
-  if (paths[0] == "SignOn") {
+  if (paths[0] == sign_on_op) {
     if (message_properties.size() != 1) {
       message.reply(status_codes::BadRequest);
       return;
@@ -259,7 +262,7 @@ void handle_post(http_request message) {
     }
   }
 
-  else if (paths[0] == "SignOff") {
+  else if (paths[0] == sign_off_op) {
     if (message_properties.size() != 0) {
       message.reply(status_codes::BadRequest);
       return;
@@ -311,7 +314,7 @@ void handle_put(http_request message) {
     message.reply(status_codes::NotImplemented);
   }
 
-  else if (paths[0] == "UpdateStatus") {
+  else if (paths[0] == update_status_op) {
     //Needs three parameters
     if (paths.size() != 3) {
       message.reply(status_codes::BadRequest);  
