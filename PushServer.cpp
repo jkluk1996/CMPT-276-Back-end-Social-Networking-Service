@@ -122,8 +122,8 @@ void handle_post(http_request message) {
   string user_country {paths[1]};
   string user_name {paths[2]};
   string status {paths[3]};
-  //Assuming status stored in updates are of the form user_country;user_name;status\n
-  string new_status {user_country + ";" + user_name + ";" + status +"\n"};
+  //Assuming status stored in updates are of the form 'status\n'
+  string new_status {status +"\n"};
 
   unordered_map<string, string> friend_map {get_json_body(message)};
   if (friend_map.size() == 1 
