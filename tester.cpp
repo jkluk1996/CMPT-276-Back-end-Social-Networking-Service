@@ -1929,4 +1929,59 @@ SUITE(USER_OP) {
                                              UserFixture::userid)};
     CHECK_EQUAL(status_codes::OK, sign_off_result.first);
   }
+
+  /*
+    Test of ReadFriendList operation
+   */
+  TEST_FIXTURE(UserFixture, ReadFriendList) {
+    //Add friends to USA/Katherine,Aretha entity in DataTable, Note that this doesn't use AddFriend operation for simplicity
+    string new_friends {"USA;Shinoda,Mike|Canada;Edwards,Kathleen|Korea;Bae,Doona"};
+    int put_result {put_entity (UserFixture::addr, UserFixture::table, UserFixture::partition, UserFixture::row, UserFixture::friends_property, new_friends)};
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    //Sign on
+    pair<status_code,value> sign_on_result {
+            do_request (methods::POST,
+                  string(UserFixture::user_addr) +
+                  sign_on_op + "/" +
+                  UserFixture::userid,
+                  value::object (vector<pair<string,value>>
+                                         {make_pair(string(UserFixture::auth_pwd_prop),
+                                                    value::string(UserFixture::user_pwd))}))};
+    CHECK_EQUAL(status_codes::OK, sign_on_result.first);
+
+    //Get user's friend list
+    pair<status_code,value> read_result {do_request (methods::GET,
+                                                     string(UserFixture::user_addr) +
+                                                     read_friend_list_op + "/" +
+                                                     UserFixture::userid)};
+    CHECK_EQUAL(status_codes::OK, read_result.first);
+
+    value expect {
+      build_json_object (vector<pair<string,string>> {
+                             make_pair(string(UserFixture::friends_property), 
+                                       new_friends)})};      
+    compare_json_values (expect, read_result.second);
+
+    //Sign off
+    pair<status_code,value> sign_off_result {do_request (methods::POST,
+                                             string(UserFixture::user_addr) +
+                                             sign_off_op + "/" +
+                                             UserFixture::userid)};
+    CHECK_EQUAL(status_codes::OK, sign_off_result.first);
+  }
+
+  /*
+    Test of ReadFriendList operation when userid does not have an active session (is not signed in).
+   */
+  TEST_FIXTURE(UserFixture, ReadFriendList_Unactive){
+    pair<status_code,value> read_result {do_request (methods::GET,
+                                                     string(UserFixture::user_addr) +
+                                                     read_friend_list_op + "/" +
+                                                     UserFixture::userid)};
+    CHECK_EQUAL(status_codes::Forbidden, read_result.first);
+  }
 }
