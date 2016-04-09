@@ -1835,7 +1835,7 @@ SUITE(USER_OP) {
                                               value::string(pwd))}))};
     CHECK_EQUAL(status_codes::NotFound, sign_on_result.first);
 
-    CHECK_EQUAL(status_codes::OK, delete_entity (AuthFixture::addr, AuthFixture::auth_table, AuthFixture::auth_table_partition, new_userid));
+    CHECK_EQUAL(status_codes::OK, delete_entity (UserFixture::addr, UserFixture::auth_table, UserFixture::auth_table_partition, new_userid));
   }
 
   /*
@@ -1872,7 +1872,7 @@ SUITE(USER_OP) {
     Test of SignOn operation where the user is already signed in and attempts to sign in again with the same userid and password
    */
   TEST_FIXTURE(UserFixture, SignOn_CorrectTwice) {
-     pair<status_code,value> sign_on_result {
+    pair<status_code,value> sign_on_result {
       do_request (methods::POST,
             string(UserFixture::user_addr) +
             sign_on_op + "/" +
@@ -1903,7 +1903,7 @@ SUITE(USER_OP) {
     Test of SignOn operation where the user is already signed in and makes an unsuccessful attempt to sign in 
    */
   TEST_FIXTURE(UserFixture, SignOn_InCorrectTwice) {
-     pair<status_code,value> sign_on_result {
+    pair<status_code,value> sign_on_result {
       do_request (methods::POST,
             string(UserFixture::user_addr) +
             sign_on_op + "/" +
@@ -1934,7 +1934,7 @@ SUITE(USER_OP) {
     Test of ReadFriendList operation
    */
   TEST_FIXTURE(UserFixture, ReadFriendList) {
-    //Add friends to USA/Katherine,Aretha entity in DataTable, Note that this doesn't use AddFriend operation for simplicity
+    //Add friends to USA/Franklin,Aretha entity in DataTable, Note that this doesn't use AddFriend operation for simplicity
     string new_friends {"USA;Shinoda,Mike|Canada;Edwards,Kathleen|Korea;Bae,Doona"};
     int put_result {put_entity (UserFixture::addr, UserFixture::table, UserFixture::partition, UserFixture::row, UserFixture::friends_property, new_friends)};
     cerr << "put result " << put_result << endl;
@@ -1975,7 +1975,7 @@ SUITE(USER_OP) {
   }
 
   /*
-    Test of ReadFriendList operation when userid does not have an active session (is not signed in).
+    Test of ReadFriendList operation when userid does not have an active session (is not signed in)
    */
   TEST_FIXTURE(UserFixture, ReadFriendList_Unactive){
     pair<status_code,value> read_result {do_request (methods::GET,
@@ -1983,5 +1983,165 @@ SUITE(USER_OP) {
                                                      read_friend_list_op + "/" +
                                                      UserFixture::userid)};
     CHECK_EQUAL(status_codes::Forbidden, read_result.first);
+  }
+
+  /*
+    Extensive test of UpdateStatus and PushStatus operation
+   */
+  TEST_FIXTURE(UserFixture, UpdateStatus) {
+    //Add entity to DataTable where Partion="Canada", Row="Reynolds,Ryan", Friends="", Status="", Updates=""
+    //Note that friends are added without the AddFriend operation for simplicity
+    string new_partition {"Canada"};
+    string new_row {"Reynolds,Ryan"};
+    int put_result {put_entity (UserFixture::addr, UserFixture::table, new_partition, new_row, UserFixture::friends_property, "")};
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+    put_result = put_entity (UserFixture::addr, UserFixture::table, new_partition, new_row, UserFixture::status_property, "");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+    put_result = put_entity (UserFixture::addr, UserFixture::table, new_partition, new_row, UserFixture::updates_property, "");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    //Add entity to DataTable where Partion="USA", Row="Curry,Stephen", Friends="", Status="", Updates=""
+    //Note that friends are added without the AddFriend operation for simplicity
+    new_partition = "USA";
+    new_row = "Curry,Stephen";
+    put_result = put_entity (UserFixture::addr, UserFixture::table, new_partition, new_row, UserFixture::friends_property, "");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+    put_result = put_entity (UserFixture::addr, UserFixture::table, new_partition, new_row, UserFixture::status_property, "");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+    put_result = put_entity (UserFixture::addr, UserFixture::table, new_partition, new_row, UserFixture::updates_property, "");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    //Adding Friends to fixture entity in DataTable, Note that friends are added without the AddFriend operation for simplicity
+    string friend_list {"Canada;Reynolds,Ryan|USA;Curry,Stephen"};
+    put_result = put_entity (UserFixture::addr, UserFixture::table, UserFixture::partition, UserFixture::row, UserFixture::friends_property, friend_list);
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    //Sign on
+    pair<status_code,value> sign_on_result {
+            do_request (methods::POST,
+                  string(UserFixture::user_addr) +
+                  sign_on_op + "/" +
+                  UserFixture::userid,
+                  value::object (vector<pair<string,value>>
+                                         {make_pair(string(UserFixture::auth_pwd_prop),
+                                                    value::string(UserFixture::user_pwd))}))};
+    CHECK_EQUAL(status_codes::OK, sign_on_result.first);
+
+    //Update status of fixture entity
+    string new_status {"Happy"};
+    pair<status_code,value> update_result {do_request (methods::PUT,
+                                                       string(UserFixture::user_addr) +
+                                                       update_status_op + "/" +
+                                                       UserFixture::userid + "/" + 
+                                                       new_status)};
+    CHECK_EQUAL(status_codes::OK, update_result.first);
+
+    pair<status_code,value> get_result {do_request (methods::GET,
+                                                    string(UserFixture::addr) +
+                                                    read_entity_admin + "/" +
+                                                    UserFixture::table + "/" + 
+                                                    UserFixture::partition + "/" + 
+                                                    UserFixture::row)};
+    CHECK_EQUAL (status_codes::OK, get_result.first);
+
+    value expect {
+      build_json_object (vector<pair<string,string>> {
+                               make_pair(string(UserFixture::friends_property), friend_list),
+                               make_pair(string(UserFixture::status_property), new_status),
+                               make_pair(string(UserFixture::updates_property), "")}
+                         )};
+    compare_json_values (expect, get_result.second);
+
+    //Update status of fixture entity again
+    new_status = "Sad";
+    update_result = do_request (methods::PUT,
+                                string(UserFixture::user_addr) +
+                                update_status_op + "/" +
+                                UserFixture::userid + "/" + 
+                                new_status);
+    CHECK_EQUAL(status_codes::OK, update_result.first);
+
+    get_result = do_request (methods::GET,
+                             string(UserFixture::addr) +
+                             read_entity_admin + "/" +
+                             UserFixture::table + "/" + 
+                             UserFixture::partition + "/" + 
+                             UserFixture::row);
+
+    expect = build_json_object (vector<pair<string,string>> {
+                                       make_pair(string(UserFixture::friends_property), friend_list),
+                                       make_pair(string(UserFixture::status_property), new_status),
+                                       make_pair(string(UserFixture::updates_property), "")});
+    compare_json_values (expect, get_result.second);
+
+    //Check if updated status is pushed to friends
+    get_result = do_request (methods::GET,
+                             string(UserFixture::addr) +
+                             read_entity_admin + "/" +
+                             UserFixture::table + "/" + 
+                             "Canada" + "/" + 
+                             "Reynolds,Ryan");
+
+    expect = build_json_object (vector<pair<string,string>> {
+                                       make_pair(string(UserFixture::friends_property), ""),
+                                       make_pair(string(UserFixture::status_property), ""),
+                                       make_pair(string(UserFixture::updates_property), "Happy\nSad\n")});
+    compare_json_values (expect, get_result.second);
+
+    get_result = do_request (methods::GET,
+                             string(UserFixture::addr) +
+                             read_entity_admin + "/" +
+                             UserFixture::table + "/" + 
+                             "USA" + "/" + 
+                             "Curry,Stephen");
+
+    expect = build_json_object (vector<pair<string,string>> {
+                                       make_pair(string(UserFixture::friends_property), ""),
+                                       make_pair(string(UserFixture::status_property), ""),
+                                       make_pair(string(UserFixture::updates_property), "Happy\nSad\n")});
+    compare_json_values (expect, get_result.second);
+    
+    //Sign off
+    pair<status_code,value> sign_off_result {do_request (methods::POST,
+                                             string(UserFixture::user_addr) +
+                                             sign_off_op + "/" +
+                                             UserFixture::userid)};
+    CHECK_EQUAL(status_codes::OK, sign_off_result.first);
+
+    CHECK_EQUAL(status_codes::OK, delete_entity (UserFixture::addr, UserFixture::table, "Canada", "Reynolds,Ryan"));
+    CHECK_EQUAL(status_codes::OK, delete_entity (UserFixture::addr, UserFixture::table, "USA", "Curry,Stephen"));
+  }
+
+  /*
+    Test of UpdateStatus operation when userid does not have an active session (is not signed in)
+   */
+  TEST_FIXTURE(UserFixture, Update_Unactive){
+    pair<status_code,value> update_result {do_request (methods::PUT,
+                                                       string(UserFixture::user_addr) +
+                                                       update_status_op + "/" +
+                                                       UserFixture::userid + "/" + 
+                                                       "status")};
+    CHECK_EQUAL(status_codes::Forbidden, update_result.first);
   }
 }
