@@ -1699,6 +1699,8 @@ public:
   static constexpr const char* auth_table {"AuthTable"};
   static constexpr const char* auth_table_partition {"Userid"};
   static constexpr const char* auth_pwd_prop {"Password"};
+  static constexpr const char* auth_data_partition_prop {"DataPartition"};
+  static constexpr const char* auth_data_row_prop {"DataRow"};
 
   static constexpr const char* table {"DataTable"};
   static constexpr const char* partition {"USA"};
@@ -1764,7 +1766,10 @@ public:
 };
 
 SUITE(USER_OP) {
-  TEST_FIXTURE(UserFixture, UserSession) {
+  /*
+    Simple Test of SignIn and SignOff operation
+   */
+  TEST_FIXTURE(UserFixture, SignOn_SignOff) {
     //Signing In
     pair<status_code,value> sign_on_result {
       do_request (methods::POST,
@@ -1777,6 +1782,147 @@ SUITE(USER_OP) {
     CHECK_EQUAL(status_codes::OK, sign_on_result.first);
 
     //Signing Off
+    pair<status_code,value> sign_off_result {do_request (methods::POST,
+                                             string(UserFixture::user_addr) +
+                                             sign_off_op + "/" +
+                                             UserFixture::userid)};
+    CHECK_EQUAL(status_codes::OK, sign_off_result.first);
+  }
+
+  /*
+    Test of SignOff operation where the specified userid does not have a active session
+   */
+  TEST_FIXTURE(UserFixture, SignOff_NoSession) {
+    pair<status_code,value> sign_off_result {do_request (methods::POST,
+                                             string(UserFixture::user_addr) +
+                                             sign_off_op + "/" +
+                                             "NonActive_userid")};
+    CHECK_EQUAL(status_codes::NotFound, sign_off_result.first);
+  }
+
+  /*
+    Test of SignOn operation where token is recieved but the token refers to a user with no record in DataTable
+   */
+  TEST_FIXTURE(UserFixture, SignOn_NoRecord) {
+    //Add entity to AuthTable where DataPartion and DataRow do not exist in DataTable
+    string new_userid {"UserNoRecord"};
+    string pwd {"foo"};
+    int put_result {put_entity (UserFixture::addr, UserFixture::auth_table, UserFixture::auth_table_partition, new_userid, UserFixture::auth_pwd_prop, pwd)};
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    put_result = put_entity (UserFixture::addr, UserFixture::auth_table, UserFixture::auth_table_partition, new_userid, UserFixture::auth_data_partition_prop, "NonExistingPartition");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    put_result = put_entity (UserFixture::addr, UserFixture::auth_table, UserFixture::auth_table_partition, new_userid, UserFixture::auth_data_row_prop, "NonExistingRow");
+    cerr << "put result " << put_result << endl;
+    if (put_result != status_codes::OK) {
+      throw std::exception();
+    }
+
+    pair<status_code,value> sign_on_result {
+      do_request (methods::POST,
+            string(UserFixture::user_addr) +
+            sign_on_op + "/" +
+            new_userid,
+            value::object (vector<pair<string,value>>
+                                   {make_pair(string(UserFixture::auth_pwd_prop),
+                                              value::string(pwd))}))};
+    CHECK_EQUAL(status_codes::NotFound, sign_on_result.first);
+
+    CHECK_EQUAL(status_codes::OK, delete_entity (AuthFixture::addr, AuthFixture::auth_table, AuthFixture::auth_table_partition, new_userid));
+  }
+
+  /*
+    Test of SignOn operation where the specified userid does not exist in AuthTable
+   */
+  TEST_FIXTURE(UserFixture, SignOn_UserNotFound) {
+    pair<status_code,value> sign_on_result {
+      do_request (methods::POST,
+            string(UserFixture::user_addr) +
+            sign_on_op + "/" +
+            "NonExistingUser",
+            value::object (vector<pair<string,value>>
+                                   {make_pair(string(UserFixture::auth_pwd_prop),
+                                              value::string(UserFixture::user_pwd))}))};
+    CHECK_EQUAL(status_codes::NotFound, sign_on_result.first);
+  }
+
+  /*
+    Test of SignOn operation where the specified password is incorrect
+   */
+  TEST_FIXTURE(UserFixture, SignOn_WrongPassword) {
+    pair<status_code,value> sign_on_result {
+      do_request (methods::POST,
+            string(UserFixture::user_addr) +
+            sign_on_op + "/" +
+            UserFixture::userid,
+            value::object (vector<pair<string,value>>
+                                   {make_pair(string(UserFixture::auth_pwd_prop),
+                                              value::string("WrongPassword"))}))};
+    CHECK_EQUAL(status_codes::NotFound, sign_on_result.first);
+  }
+
+  /*
+    Test of SignOn operation where the user is already signed in and attempts to sign in again with the same userid and password
+   */
+  TEST_FIXTURE(UserFixture, SignOn_CorrectTwice) {
+     pair<status_code,value> sign_on_result {
+      do_request (methods::POST,
+            string(UserFixture::user_addr) +
+            sign_on_op + "/" +
+            UserFixture::userid,
+            value::object (vector<pair<string,value>>
+                                   {make_pair(string(UserFixture::auth_pwd_prop),
+                                              value::string(UserFixture::user_pwd))}))};
+    CHECK_EQUAL(status_codes::OK, sign_on_result.first);
+
+    pair<status_code,value> sign_on_again {
+      do_request (methods::POST,
+            string(UserFixture::user_addr) +
+            sign_on_op + "/" +
+            UserFixture::userid,
+            value::object (vector<pair<string,value>>
+                                   {make_pair(string(UserFixture::auth_pwd_prop),
+                                              value::string(UserFixture::user_pwd))}))};
+    CHECK_EQUAL(status_codes::OK, sign_on_again.first);
+
+    pair<status_code,value> sign_off_result {do_request (methods::POST,
+                                             string(UserFixture::user_addr) +
+                                             sign_off_op + "/" +
+                                             UserFixture::userid)};
+    CHECK_EQUAL(status_codes::OK, sign_off_result.first);
+  }
+
+  /*
+    Test of SignOn operation where the user is already signed in and makes an unsuccessful attempt to sign in 
+   */
+  TEST_FIXTURE(UserFixture, SignOn_InCorrectTwice) {
+     pair<status_code,value> sign_on_result {
+      do_request (methods::POST,
+            string(UserFixture::user_addr) +
+            sign_on_op + "/" +
+            UserFixture::userid,
+            value::object (vector<pair<string,value>>
+                                   {make_pair(string(UserFixture::auth_pwd_prop),
+                                              value::string(UserFixture::user_pwd))}))};
+    CHECK_EQUAL(status_codes::OK, sign_on_result.first);
+
+    pair<status_code,value> sign_on_again {
+      do_request (methods::POST,
+            string(UserFixture::user_addr) +
+            sign_on_op + "/" +
+            UserFixture::userid,
+            value::object (vector<pair<string,value>>
+                                   {make_pair(string(UserFixture::auth_pwd_prop),
+                                              value::string("WrongPassword"))}))};
+    CHECK_EQUAL(status_codes::NotFound, sign_on_again.first);
+
     pair<status_code,value> sign_off_result {do_request (methods::POST,
                                              string(UserFixture::user_addr) +
                                              sign_off_op + "/" +
