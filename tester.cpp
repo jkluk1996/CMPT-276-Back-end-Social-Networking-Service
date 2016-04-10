@@ -57,6 +57,8 @@ const string update_property_admin {"UpdatePropertyAdmin"};
 
 const string sign_on_op {"SignOn"};
 const string sign_off_op {"SignOff"};
+const string add_friend_op {"AddFriend"};
+const string remove_friend_op {"UnFriend"};
 const string read_friend_list_op {"ReadFriendList"};
 const string update_status_op {"UpdateStatus"};
 const string push_status_op {"PushStatus"};
@@ -1958,6 +1960,61 @@ SUITE(USER_OP) {
     CHECK_EQUAL(status_codes::OK, sign_off_result.first);
 
   }
+
+  /* 
+    Simple test of AddFriend and UnFriend operation
+   */
+
+  TEST_FIXTURE(UserFixture, AddFriend_UnFriend) {
+
+    string friend_country {"USA"};
+    string friend_name {"Henderson,Jason"};
+
+    // Sign on
+    pair<status_code,value> sign_on_result {
+            do_request (methods::POST,
+                        string(UserFixture::user_addr)
+                        + sign_on_op + "/"
+                        + UserFixture::userid,
+                        value::object (vector<pair<string,value>>
+                                         {make_pair(string(UserFixture::auth_pwd_prop),
+                                                    value::string(UserFixture::user_pwd))}))};
+
+    CHECK_EQUAL(status_codes::OK, sign_on_result.first);
+
+    // Add Friend
+    pair<status_code,value> add_friend_result {
+      do_request (methods::PUT,
+                  string(UserFixture::user_addr)
+                  + add_friend_op + "/"
+                  + UserFixture::userid + "/"
+                  + friend_country + "/"
+                  + friend_name)};
+
+    CHECK_EQUAL(status_codes::OK, add_friend_result.first);
+
+    // UnFriend
+    pair<status_code,value> delete_friend_result {
+      do_request (methods::PUT,
+                  string(UserFixture::user_addr)
+                  + remove_friend_op + "/"
+                  + UserFixture::userid + "/"
+                  + friend_country +  "/"
+                  + friend_name)};
+
+    CHECK_EQUAL(status_codes::OK, delete_friend_result.first);
+
+    // Sign off
+    pair<status_code,value> sign_off_result {
+            do_request (methods::POST,
+                        string(UserFixture::user_addr)
+                        + sign_off_op + "/"
+                        + UserFixture::userid)};
+
+    CHECK_EQUAL(status_codes::OK, sign_off_result.first);
+
+}
+
 
   /*
     Test of ReadFriendList operation
