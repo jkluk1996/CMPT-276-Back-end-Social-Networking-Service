@@ -1796,7 +1796,7 @@ SUITE(USER_OP) {
 
   /*
     Test of SignOff operation where the specified userid does not have a active session
-  */
+   */
   TEST_FIXTURE(UserFixture, SignOff_NoSession) {
 
     pair<status_code,value> sign_off_result {
@@ -1851,7 +1851,7 @@ SUITE(USER_OP) {
 
   /*
     Test of SignOn operation where the specified userid does not exist in AuthTable
-  */
+   */
   TEST_FIXTURE(UserFixture, SignOn_UserNotFound) {
 
     pair<status_code,value> sign_on_result {
@@ -1869,7 +1869,7 @@ SUITE(USER_OP) {
 
   /*
     Test of SignOn operation where the specified password is incorrect
-  */
+   */
   TEST_FIXTURE(UserFixture, SignOn_WrongPassword) {
 
     pair<status_code,value> sign_on_result {
@@ -1887,7 +1887,7 @@ SUITE(USER_OP) {
 
   /*
     Test of SignOn operation where the user is already signed in and attempts to sign in again with the same userid and password
-  */
+   */
   TEST_FIXTURE(UserFixture, SignOn_CorrectTwice) {
 
     pair<status_code,value> sign_on_result {
@@ -1924,7 +1924,7 @@ SUITE(USER_OP) {
 
   /*
     Test of SignOn operation where the user is already signed in and makes an unsuccessful attempt to sign in 
-  */
+   */
   TEST_FIXTURE(UserFixture, SignOn_InCorrectTwice) {
 
     pair<status_code,value> sign_on_result {
@@ -1961,7 +1961,7 @@ SUITE(USER_OP) {
 
   /*
     Test of ReadFriendList operation
-  */
+   */
   TEST_FIXTURE(UserFixture, ReadFriendList) {
 
     // Add friends to USA/Franklin,Aretha entity in DataTable, Note that this doesn't use AddFriend operation for simplicity
@@ -2013,7 +2013,7 @@ SUITE(USER_OP) {
 
   /*
     Test of ReadFriendList operation when userid does not have an active session (is not signed in)
-  */
+   */
   TEST_FIXTURE(UserFixture, ReadFriendList_Unactive) {
 
     pair<status_code,value> read_result {
@@ -2028,7 +2028,7 @@ SUITE(USER_OP) {
 
   /*
     Extensive test of UpdateStatus and PushStatus operation
-  */
+   */
   TEST_FIXTURE(UserFixture, UpdateStatus) {
 
     // Add entity to DataTable where Partion="Canada", Row="Reynolds,Ryan", Friends="", Status="", Updates=""
@@ -2190,7 +2190,7 @@ SUITE(USER_OP) {
 
   /*
     Test of UpdateStatus operation when userid does not have an active session (is not signed in)
-  */
+   */
   TEST_FIXTURE(UserFixture, UpdateStatus_Unactive) {
 
     pair<status_code,value> update_result {
@@ -2206,7 +2206,7 @@ SUITE(USER_OP) {
 
   /*
     Test of UpdateStatus and PushStatus operation when push server ignores failing updates
-  */
+   */
   TEST_FIXTURE(UserFixture, UpdateStatus_IgnoreFailedUpdates) {
 
     // Add friend to fixture entity in DataTable, where the friend doesn't have a corresponding entity in DataTable
@@ -2266,5 +2266,5 @@ SUITE(USER_OP) {
 
     CHECK_EQUAL(status_codes::OK, sign_off_result.first);
   }
-  
+
 }
