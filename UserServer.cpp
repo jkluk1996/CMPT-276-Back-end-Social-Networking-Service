@@ -77,6 +77,8 @@ const string data_table_status_prop {"Status"};
 
 const string sign_on_op {"SignOn"};
 const string sign_off_op {"SignOff"};
+const string add_friend_op {"AddFriend"};
+const string remove_friend_op {"UnFriend"};
 const string read_friend_list_op {"ReadFriendList"};
 const string update_status_op {"UpdateStatus"};
 const string push_status_op {"PushStatus"};
@@ -306,90 +308,122 @@ void handle_put(http_request message) {
   string data_partition {get<1>(user_map[userid])};
   string data_row {get<2>(user_map[userid])};
 
-  if (paths[0] == "AddFriend") {
-    
-	// Needs four parameters
+  if (paths[0] == add_friend_op) {
+	  // Needs four parameters
     if (paths.size() != 4) {
       message.reply(status_codes::BadRequest);  
       return;
     }
 	
-	// Create string country and name
-	// Create string new_friend with country and name separated by ';' character
-	string country {paths[2]}; 
-	string name {paths[3]};
-	string new_friend {country + ";" + name}
-	
-	// Retrieve friends list and assign it to string friend_list
-	pair<status_code,value> get_friends {do_request (methods::GET,
-            string(def_url) + "/" + 
-            read_friend_list_op + "/" + 
-            userid)};		
-	string friend_list {get_friends[data_table_friends_prop]};
-	
-	// Search for new_friend in friend_list to see if the friend already exists in the user's friendlist
-	size_t found = friend_list.find(new_friend);
-	
-	// if it does, then return status code OK
-	if (found!=string::npos)
-	{
-	message.reply(status_codes::OK);
-	return;
-	}
-	else
-	{
-	// Otherwise, add the new friend to the user's friends list
-    pair<status_code,value> update_result {do_request (methods::PUT,
-			addr +
-			update_entity_auth + "/" +
-			data_table_name + "/" +
-			token + "/" +
-			data_partition + "/" +
-			data_row,
-			value::object (vector<pair<string,value>>
-				{make_pair(data_table_friends_prop,
-					value::string(friends_list))}))}; 
-					
-	message.reply(status_codes::OK);
-	return;
+  	// Create string country and name
+  	// Create string new_friend with country and name separated by ';' character
+  	string country {paths[2]}; 
+  	string name {paths[3]};
+  	string new_friend {country + ";" + name};
+  	
+  	// Retrieve friends list and assign it to string friend_list
+  	pair<status_code,value> get_friends {do_request (methods::GET,
+                                                     string(def_url) + "/" + 
+                                                     read_friend_list_op + "/" + 
+                                                     userid)};		
+  	
+    if (get_friends.first != status_codes::OK) {
+      message.reply(get_friends.first);
+      return;
+    }
+
+    unordered_map<string, string> friend_prop {unpack_json_object (get_friends.second)};
+    string friend_list_string {friend_prop[data_table_friends_prop]};
+
+  	// Search for new_friend in friend_list to see if the friend already exists in the user's friendlist
+  	std::size_t found = friend_list_string.find(new_friend);
+  	
+  	// if it does, then return status code OK
+  	if (found != string::npos) {
+    	message.reply(status_codes::OK);
+    	return;
+  	}
+  	else {
+  	  // Otherwise, add the new friend to the user's friends list
+      friends_list_t friend_list_vector {parse_friends_list(friend_list_string)};
+      friend_list_vector.push_back(make_pair(country,name));
+      friend_list_string = friends_list_to_string(friend_list_vector);
+
+      pair<status_code,value> update_result {do_request (methods::PUT,
+                                                         addr +
+                                                         update_entity_auth + "/" +
+                                                         data_table_name + "/" +
+                                                         token + "/" +
+                                                         data_partition + "/" +
+                                                         data_row,
+                                                         value::object (vector<pair<string,value>>
+                                                                        {make_pair(data_table_friends_prop,
+                                                                                   value::string(friend_list_string))}))}; 
+  	  message.reply(update_result.first);
+    }
   }
 
-  else if (paths[0] == "UnFriend") {
+  else if (paths[0] == remove_friend_op) {
     // Needs four parameters
-	if (paths.size() < 2) {
-		message.reply(status_codes::BadRequest);
-		return;
-	  }  
-	  
-	// Create string country and name
-	// Create string new_friend with country and name separated by ';' character
-	string country {paths[2]}; 
-	string name {paths[3]};
-	string new_friend {country + ";" + name} 
-	  
-	// Retrieve friends list and assign it to string friend_list
-	pair<status_code,value> get_friends {do_request (methods::GET,
-            string(def_url) + "/" + 
-            read_friend_list_op + "/" + 
-            userid)};		
-	string friend_list {get_friends[data_table_friends_prop]};
-	
-	// Search for new_friend in friend_list to see if the friend exists in the user's friendlist
-	size_t found = friend_list.find(new_friend);  
-	  
-	// if it doesn't, then return status code OK
-	if (found==string::npos)
-	{
-	message.reply(status_codes::OK);
-	return;
-	}
-	else
-	{
-	// if it does, delete friend...
-	friend_list.erase(found, new_friend.length());
-	message.reply(status_codes::OK);
-	return;
-	}
+  	if (paths.size() != 4) {
+      message.reply(status_codes::BadRequest);  
+      return;
+    }
+  	  
+  	// Create string country and name
+  	// Create string new_friend with country and name separated by ';' character
+  	string country {paths[2]}; 
+  	string name {paths[3]};
+  	string new_friend {country + ";" + name};
+  	  
+  	// Retrieve friends list and assign it to string friend_list
+  	pair<status_code,value> get_friends {do_request (methods::GET,
+                                                     string(def_url) + "/" + 
+                                                     read_friend_list_op + "/" + 
+                                                     userid)};		
+
+    if (get_friends.first != status_codes::OK) {
+      message.reply(get_friends.first);
+      return;
+    }
+
+    unordered_map<string, string> friend_prop {unpack_json_object (get_friends.second)};
+    string friend_list_string {friend_prop[data_table_friends_prop]};
+
+  	
+  	// Search for new_friend in friend_list to see if the friend exists in the user's friendlist
+  	std::size_t found = friend_list_string.find(new_friend);  
+  	  
+  	// if it doesn't, then return status code OK
+  	if (found == string::npos) {
+      message.reply(status_codes::OK);
+  	  return;
+  	}
+
+  	// Otherwise, delete friend
+    else {
+      friends_list_t friend_list_vector {parse_friends_list(friend_list_string)};
+      friends_list_t new_friend_list_vector {};
+      pair<string,string> new_friend_pair {make_pair(country,name)};
+      for (auto user_friend = friend_list_vector.begin(); user_friend != friend_list_vector.end(); ++user_friend) {
+        if (make_pair(user_friend->first, user_friend->second) != new_friend_pair) {
+          new_friend_list_vector.push_back(make_pair(user_friend->first, user_friend->second));
+        }
+      }
+      friend_list_string = friends_list_to_string(new_friend_list_vector);
+
+      pair<status_code,value> update_result {do_request (methods::PUT,
+                                                         addr +
+                                                         update_entity_auth + "/" +
+                                                         data_table_name + "/" +
+                                                         token + "/" +
+                                                         data_partition + "/" +
+                                                         data_row,
+                                                         value::object (vector<pair<string,value>>
+                                                                        {make_pair(data_table_friends_prop,
+                                                                                   value::string(friend_list_string))}))}; 
+      message.reply(update_result.first);
+    }
   }
 
   else if (paths[0] == update_status_op) {
