@@ -307,7 +307,51 @@ void handle_put(http_request message) {
   string data_row {get<2>(user_map[userid])};
 
   if (paths[0] == "AddFriend") {
-    message.reply(status_codes::NotImplemented);
+    
+	// Needs four parameters
+    if (paths.size() != 4) {
+      message.reply(status_codes::BadRequest);  
+      return;
+    }
+	
+	// Create string country and name
+	// Create string new_friend with country and name separated by ';' character
+	string country {paths[2]}; 
+	string name {paths[3]};
+	string new_friend {country + ";" + name}
+	
+	// Retrieve friends list and assign it to string friend_list
+	pair<status_code,value> get_friends {do_request (methods::GET,
+            string(def_url) + "/" + 
+            read_friend_list_op + "/" + 
+            userid)};		
+	string friend_list {get_friends[data_table_friends_prop]};
+	
+	// Search for new_friend in friend_list to see if the friend already exists in the user's friendlist
+	size_t found = friend_list.find(new_friend);
+	
+	// if it does, then return status code OK
+	if (found!=string::npos)
+	{
+	message.reply(status_codes::OK);
+	return;
+	}
+	else
+	{
+	// Otherwise, add the new friend to the user's friends list
+    pair<status_code,value> update_result {do_request (methods::PUT,
+			addr +
+			update_entity_auth + "/" +
+			data_table_name + "/" +
+			token + "/" +
+			data_partition + "/" +
+			data_row,
+			value::object (vector<pair<string,value>>
+				{make_pair(data_table_friends_prop,
+					value::string(friends_list))}))}; 
+					
+	message.reply(status_codes::OK);
+	return;
   }
 
   else if (paths[0] == "UnFriend") {
