@@ -1967,8 +1967,8 @@ SUITE(USER_OP) {
 
   TEST_FIXTURE(UserFixture, AddFriend_UnFriend) {
 
-    string friend_country {"USA"};
-    string friend_name {"Henderson,Jason"};
+    string friend_country {"Singapore"};
+    string friend_name {"Batisah,Taufik"};
 
     // Sign on
     pair<status_code,value> sign_on_result {
@@ -2052,7 +2052,7 @@ SUITE(USER_OP) {
   TEST_FIXTURE(UserFixture, AddFriend_Unactive) {
 
     string friend_country {"Philippines"};
-    string friend_name {"Magbual,Kimberlyn"};
+    string friend_name {"Mendoza,Maine"};
 
     // Add Friend
     pair<status_code,value> add_friend_result {
@@ -2073,7 +2073,7 @@ SUITE(USER_OP) {
   TEST_FIXTURE(UserFixture, UnFriend_Unactive) {
 
     string friend_country {"Malaysia"};
-    string friend_name {"Mustafa,Sangal"};
+    string friend_name {"Dayang,Nurfaizah"};
 
     // Sign on
     pair<status_code,value> sign_on_result {
